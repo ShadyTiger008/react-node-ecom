@@ -1,12 +1,19 @@
-import express from "express";
-import { server_url } from "../src/config/index.js";
 import dotenv from "dotenv";
-dotenv.config();
+import { app } from "./app.js";
+import { connectDB } from "./db/index.js";
 
-const app = express();
+dotenv.config({
+  path: "./.env",
+} );
 
-console.log(process.env.PORT);
+const port = process.env.PORT || 8001
 
-app.listen(process.env.PORT, () => {
-  console.log(`⚙️ Server is running on ${server_url}...`);
-});
+connectDB()
+  .then(() => {
+    app.listen(port, (req, res) => {
+      console.log(`⚙️  Server listening on ${port}.....`);
+    });
+  })
+  .catch((error) => {
+    console.log(`Error listening on ${port}`, error);
+  });
