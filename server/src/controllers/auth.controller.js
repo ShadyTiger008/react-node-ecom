@@ -76,23 +76,27 @@ const userLogin = asyncHandler(async (req, res) => {
   );
   if (!isValidPassword) throw new ApiError(401, "Invalid Password");
 
+  const refreshToken = await generateRefreshToken({
+    userId: existedUser[0][0].userID,
+    userEmail: existedUser[0][0].email,
+  });
+
+  await connection.query(
+    `UPDATE users SET refreshToken='${refreshToken}' WHERE userID='${existedUser[0][0].userID}'`
+  );
+
   const loggedUser = await connection.query(
     `SELECT * FROM users WHERE userID='${existedUser[0][0].userID}'`
   );
+
+  const accessToken = await generateRefreshToken({
+    userId: loggedUser[0][0].userID,
+  });
 
   const options = {
     httpsOnly: true,
     secure: true,
   };
-
-  const refreshToken = await generateRefreshToken({
-    userId: loggedUser[0][0].userID,
-    userEmail: loggedUser[0][0].email,
-  });
-
-  const accessToken = await generateRefreshToken({
-    userId: loggedUser[0][0].userID,
-  });
 
   return res
     .status(200)
@@ -111,4 +115,35 @@ const userLogin = asyncHandler(async (req, res) => {
     );
 });
 
-export { userRegistration, userLogin };
+const userLogout = asyncHandler(async (req, res) => {
+  const userId = req.user.userID;
+
+  if (!userId) throw new ApiError(401, "Unauthorized request!");
+
+  const connection = getConnection();
+
+  const loggedUser = await connection.query(
+    `SELECT * FROM users WHERE userID='${userId}'`
+  );
+
+  if (!loggedUser) throw new ApiError(404, "No such user exists");
+
+  const updateUser = await connection.query(
+    `UPDATE users SET refreshToken=null WHERE userID='${loggedUser[0][0].userID}'`
+  );
+
+  if (!loggedUser) throw new ApiError(401, "Couldn't update the user!");
+
+  const options = {
+    httpsOnly: true,
+    secure: true,
+  };
+
+  return res
+    .status(201)
+    .clearCookie("refreshToken", options)
+    .clearCookie("accessToken", options)
+    .json(new ApiResponse(200, {}, "User logged out successfully!"));
+});
+
+export { userRegistration, userLogin, userLogout };

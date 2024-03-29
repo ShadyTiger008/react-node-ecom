@@ -17,7 +17,7 @@ export const generateRefreshToken = ({ userId, userEmail }) => {
       _id: userId,
       email: userEmail,
     },
-    process.env.ACCESS_TOKEN_SECRET || "refresh_token_secret",
+    process.env.REFRESH_TOKEN_SECRET || "refresh_token_secret",
     { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "30d" }
   );
 };

@@ -1,5 +1,10 @@
 import express from "express";
-import { userLogin, userRegistration } from "../controllers/auth.controller.js";
+import {
+  userLogin,
+  userLogout,
+  userRegistration,
+} from "../controllers/auth.controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
@@ -18,5 +23,6 @@ router.route("/register").post(
 );
 
 router.route("/login").post(userLogin);
+router.route("/logout").get(verifyJWT, userLogout);
 
 export default router;
