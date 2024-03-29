@@ -144,6 +144,11 @@ const userLogout = asyncHandler(async (req, res) => {
     .clearCookie("refreshToken", options)
     .clearCookie("accessToken", options)
     .json(new ApiResponse(200, {}, "User logged out successfully!"));
-});
+} );
 
-export { userRegistration, userLogin, userLogout };
+const verifyEmail = asyncHandler( async ( req, res ) =>
+{
+    
+})
+
+export { userRegistration, userLogin, userLogout, verifyEmail };
