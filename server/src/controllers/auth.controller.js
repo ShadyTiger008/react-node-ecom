@@ -3,8 +3,10 @@ import ApiError from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import bcrypt from "bcryptjs";
-import { generateRefreshToken } from "../helpers/index.js";
+import { generateRefreshToken } from "../helpers/auth.js";
 import { uploadOnCloudinary } from "../services/cloudinary.js";
+import { sendEmail } from "../services/send_emil.js";
+import { generateOTP } from "../helpers/index.js";
 
 const userRegistration = asyncHandler(async (req, res) => {
   const { fullName, email, phone, password } = req.body;
@@ -28,8 +30,8 @@ const userRegistration = asyncHandler(async (req, res) => {
       .toString()
       .padStart(5, "0");
 
-  console.log( "Hashed Password: ", hashedPassword );
-  
+  console.log("Hashed Password: ", hashedPassword);
+
   const avatarLocalPath = req.files?.avatar[0]?.path;
 
   if (!avatarLocalPath) {
@@ -46,9 +48,11 @@ const userRegistration = asyncHandler(async (req, res) => {
 
   console.log("Avatar uploaded successfully:", avatar);
 
+  const generatedOtp = await generateOTP();
+
   const user = await connection.query(
-    `INSERT INTO users (userID, fullName, email, phone, password, profileImage) VALUES (?, ?, ?, ?, ?, ?)`,
-    [userId, fullName, email, phone, hashedPassword, avatar.url]
+    `INSERT INTO users (userID, fullName, email, phone, password, profileImage, otp) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [userId, fullName, email, phone, hashedPassword, avatar.url, generatedOtp]
   );
 
   if (!user) {
@@ -59,6 +63,14 @@ const userRegistration = asyncHandler(async (req, res) => {
     `SELECT * FROM users WHERE userID='${userId}'`
   );
   if (!insertedUser[0]) throw new ApiErrorError(401, "Failed to add the user");
+
+  await sendEmail({
+    email: insertedUser[0][0].email,
+    subject: "Verify E-Mail OTP",
+    title: "Verify your email now",
+    otp: generatedOtp,
+    name: insertedUser[0][0].fullName,
+  });
 
   return res
     .status(201)
@@ -161,11 +173,8 @@ const userLogout = asyncHandler(async (req, res) => {
     .clearCookie("refreshToken", options)
     .clearCookie("accessToken", options)
     .json(new ApiResponse(200, {}, "User logged out successfully!"));
-} );
+});
 
-const verifyEmail = asyncHandler( async ( req, res ) =>
-{
-    
-})
+const verifyEmail = asyncHandler(async (req, res) => {});
 
 export { userRegistration, userLogin, userLogout, verifyEmail };

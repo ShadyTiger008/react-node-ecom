@@ -1,0 +1,17 @@
+1. Auth Apis: 
+  a. Verify Email
+  - POST /api/auth/verify-email
+    Request Body: { email: 'example@gmail.com' }
+
+  b. Resend Verification Email
+  - GET /api/auth/resend-verification-email?email=example%40gmail.com
+
+  c. Generate access and refresh token
+
+  d. Refresh access token
+
+  e. Change current password
+
+  f. Get current logged in user
+
+  g. Update user avatar
