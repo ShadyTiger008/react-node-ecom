@@ -73,7 +73,7 @@ export const sendEmail = async ({ email, subject, title, otp, name }) => {
                     <p>${title}</p>
                 </div>
                 <div class="content">
-                    <p>Hello, ${name}!</p>
+                    <p>Hello!, ${name}</p>
                     <p class="otp">Your One Time Password (OTP) is: </p>
                     <div class="otp">${otp}</div>
                     <p>If you did not request this OTP, please ignore this email.</p>
