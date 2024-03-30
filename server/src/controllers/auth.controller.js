@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import bcrypt from "bcryptjs";
 import { generateRefreshToken } from "../helpers/index.js";
+import { uploadOnCloudinary } from "../services/cloudinary.js";
 
 const userRegistration = asyncHandler(async (req, res) => {
   const { fullName, email, phone, password } = req.body;
@@ -27,11 +28,27 @@ const userRegistration = asyncHandler(async (req, res) => {
       .toString()
       .padStart(5, "0");
 
-  console.log("Hashed Password: ", hashedPassword);
+  console.log( "Hashed Password: ", hashedPassword );
+  
+  const avatarLocalPath = req.files?.avatar[0]?.path;
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar is required!");
+  }
+  console.log("Uploading avatar to Cloudinary:", avatarLocalPath);
+
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+  if (!avatar) {
+    console.error("Avatar upload to Cloudinary failed:", avatar);
+    throw new ApiError(400, "Avatar file is required!");
+  }
+
+  console.log("Avatar uploaded successfully:", avatar);
 
   const user = await connection.query(
-    `INSERT INTO users (userID, fullName, email, phone, password) VALUES (?, ?, ?, ?, ?)`,
-    [userId, fullName, email, phone, hashedPassword]
+    `INSERT INTO users (userID, fullName, email, phone, password, profileImage) VALUES (?, ?, ?, ?, ?, ?)`,
+    [userId, fullName, email, phone, hashedPassword, avatar.url]
   );
 
   if (!user) {
