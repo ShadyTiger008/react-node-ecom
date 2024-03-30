@@ -1,3 +1,5 @@
+ToDo's:
+
 1. Auth Apis: 
   a. Verify Email
   - POST /api/auth/verify-email
@@ -12,6 +14,8 @@
 
   e. Change current password
 
-  f. Get current logged in user
-
   g. Update user avatar
+
+
+Done:
+    f. Get current logged in user

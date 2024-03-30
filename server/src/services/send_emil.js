@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const sendEmail = async ({ email, subject, title, otp, name }) => {
+export const sendEmail = async ({ mail_type, email, subject, title, otp, name }) => {
   const emailTemplate = `
     <!DOCTYPE html>
     <html lang="en">

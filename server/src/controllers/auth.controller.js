@@ -7,6 +7,7 @@ import { generateRefreshToken } from "../helpers/auth.js";
 import { uploadOnCloudinary } from "../services/cloudinary.js";
 import { sendEmail } from "../services/send_emil.js";
 import { generateOTP } from "../helpers/index.js";
+import { mailTypes } from "../constants/index.js";
 
 const userRegistration = asyncHandler(async (req, res) => {
   const { fullName, email, phone, password } = req.body;
@@ -183,6 +184,99 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "Got the user successfully!"));
 });
 
-const verifyEmail = asyncHandler(async (req, res) => {});
+const verifyEmail = asyncHandler(async (req, res) => {
+  const email = req.query.email;
+  const { otp } = req.body;
+  console.log(email, otp);
 
-export { userRegistration, userLogin, userLogout, verifyEmail, getCurrentUser };
+  const connection = await getConnection();
+
+  const user = await connection.query(
+    `SELECT * FROM users WHERE email='${email}'`
+  );
+
+  if (!user || !user[0]?.length) {
+    throw new ApiError(400, "No account with this email found.");
+  }
+
+  if (user[0][0].isVerified === "1") {
+    throw new ApiResponse(500, "User is already verified!");
+  }
+
+  if (user[0][0].otp === null) {
+    throw new ApiError(
+      403,
+      "Email is already verified! Please login to continue"
+    );
+  }
+
+  if (user[0][0].otp !== otp) {
+    throw new ApiError(403, "Invalid OTP provided!");
+  }
+
+  console.log(user[0][0].otp);
+
+  await connection.query(
+    `UPDATE users SET isVerified=1, otp=null WHERE email='${email}'`
+  );
+
+  const updatedUser = await connection.query(
+    `SELECT * FROM users WHERE email='${email}'`
+  );
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        200,
+        updatedUser[0][0],
+        "Account has been verified successfully!"
+      )
+    );
+});
+
+  const resendOTP = asyncHandler(async (req, res) => {
+    const email = req.query.email;
+
+    const connection = await getConnection();
+
+    const user = await connection.query(
+      `SELECT * FROM users WHERE email='${email}'`
+    );
+
+    if (!user || !user[0]?.length) {
+      throw new ApiError(400, "No account with this email found.");
+    }
+
+    const generatedOtp = await generateOTP();
+
+    await connection.query(
+      `UPDATE users SET otp='${generatedOtp}' WHERE email='${user[0][0].email}'`
+      );
+      
+      await sendEmail({
+        mail_type: mailTypes[6],
+        email: email,
+        subject: "Resend E-mail Otp",
+        title: "Your new Otp",
+        name: user[0][0].name,
+        otp: generatedOtp,
+      } );
+    
+    const updatedUser = await connection.query("SELECT * FROM users WHERE userID=?", [
+      user[0][0].userID,
+    ]);
+
+    return res
+      .status(201)
+      .json(new ApiResponse(200, updatedUser[0][0], "Resend OTP successfully!"));
+  });
+
+export {
+  userRegistration,
+  userLogin,
+  userLogout,
+  verifyEmail,
+  getCurrentUser,
+  resendOTP,
+};
