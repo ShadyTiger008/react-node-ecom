@@ -1,13 +1,99 @@
+// External Library Imports
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+// External Library Imports
+
+//Local Imports
 import { getConnection } from "../db/index.js";
 import ApiError from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import bcrypt from "bcryptjs";
-import { generateRefreshToken } from "../helpers/auth.js";
+import { generateAccessToken, generateRefreshToken } from "../helpers/auth.js";
 import { uploadOnCloudinary } from "../services/cloudinary.js";
 import { sendEmail } from "../services/send_email.js";
 import { generateOTP } from "../helpers/index.js";
 import { mailTypes } from "../constants/index.js";
+//Local Imports
+
+const generateAccessAndRefreshToken = async (userID) => {
+  try {
+    const connection = await getConnection();
+
+    const user = await connection.query(`SELECT * FROM users WHERE userID=?`, [
+      userID,
+    ]);
+
+    if (!user) throw new ApiError(401, "User not found!");
+
+    const accessToken = await generateAccessToken({
+      userId: user[0][0].userID,
+      userEmail: user[0][0].email,
+    });
+
+    const refreshToken = await generateRefreshToken({
+      userId: user[0][0].userID,
+      userEmail: user[0][0].email,
+    });
+
+    const updatedUser = await connection.query(
+      `UPDATE users SET refreshToken=? WHERE userID=?`,
+      [refreshToken, userID]
+    );
+
+    if (!updatedUser) throw new ApiError(500, "User can't be updated");
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(error.statusCode, error.message);
+  }
+};
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingToken = req.cookies.refreshToken || req.body.refreshToken;
+
+  if (!incomingToken) throw new ApiError(403, "Unauthorized Request!");
+
+  const decodedToken = jwt.decode(
+    incomingToken,
+    process.env.REFRESH_TOKEN_SECRET
+  );
+
+  if (!decodedToken)
+    throw new ApiError(500, "Error occurred while decoding token.");
+
+  const connection = await getConnection();
+
+  const loggedUser = await connection.query(
+    `SELECT * FROM users WHERE userID=?`,
+    [decodedToken.userID]
+  );
+  if (!loggedUser) throw new ApiError(404, "No logged in user found.");
+
+  const { refreshToken: newRefreshToken, accessToken } =
+    await generateAccessAndRefreshToken(loggedUser[0][0].userID);
+
+  await connection.query(`UPDATE users SET refreshToken=? WHERE userID=?`, [
+    newRefreshToken,
+    loggedUser[0][0].userID,
+  ]);
+
+  const options = {
+    httpsOnly: true,
+    secure: true,
+  };
+
+  res
+    .status(200)
+    .cookie("accessToken", newRefreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        { accessToken: accessToken, refreshToken: newRefreshToken },
+        "Access Token is successfully refreshed!"
+      )
+    );
+});
 
 const userRegistration = asyncHandler(async (req, res) => {
   const { fullName, email, phone, password } = req.body;
@@ -107,6 +193,11 @@ const userLogin = asyncHandler(async (req, res) => {
       existedUser[0][0].password
     );
     if (!isValidPassword) throw new ApiError(401, "Invalid Password");
+
+    await connection.query(`UPDATE users SET otpVerified=? WHERE userID=?`, [
+      0,
+      existedUser[0][0].userID,
+    ]);
   } else {
     const generatedOtp = generateOTP();
 
@@ -125,10 +216,9 @@ const userLogin = asyncHandler(async (req, res) => {
     });
   }
 
-  const refreshToken = await generateRefreshToken({
-    userId: existedUser[0][0].userID,
-    userEmail: existedUser[0][0].email,
-  });
+  const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
+    existedUser[0][0]?.userID
+  );
 
   await connection.query(
     `UPDATE users SET refreshToken='${refreshToken}' WHERE userID='${existedUser[0][0].userID}'`
@@ -137,10 +227,6 @@ const userLogin = asyncHandler(async (req, res) => {
   const loggedUser = await connection.query(
     `SELECT * FROM users WHERE userID='${existedUser[0][0].userID}'`
   );
-
-  const accessToken = await generateRefreshToken({
-    userId: loggedUser[0][0].userID,
-  });
 
   const options = {
     httpsOnly: true,
@@ -152,15 +238,24 @@ const userLogin = asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
     .json(
-      new ApiResponse(
-        200,
-        {
-          user: loggedUser[0][0],
-          refreshToken: refreshToken,
-          accessToken: accessToken,
-        },
-        "Logged in Successfully!"
-      )
+      password
+        ? new ApiResponse(
+            200,
+            {
+              user: loggedUser[0][0],
+              refreshToken: refreshToken,
+              accessToken: accessToken,
+            },
+            "Logged in Successfully!"
+          )
+        : new ApiResponse(
+            200,
+            {
+              message:
+                "Check email for login otp! Verify the otp sent to email to login successfully.",
+            },
+            "Login OTP sent Successfully!"
+          )
     );
 });
 
@@ -178,7 +273,7 @@ const userLogout = asyncHandler(async (req, res) => {
   if (!loggedUser) throw new ApiError(404, "No such user exists");
 
   await connection.query(
-    `UPDATE users SET refreshToken=null WHERE userID='${loggedUser[0][0].userID}'`
+    `UPDATE users SET refreshToken=null, otpVerified=0 WHERE userID='${loggedUser[0][0].userID}'`
   );
 
   if (!loggedUser) throw new ApiError(401, "Couldn't update the user!");
@@ -380,7 +475,7 @@ const changePassword = asyncHandler(async (req, res) => {
     email: updatedUser[0][0].email,
     subject: "Your Password Has Been Changed.",
     title: "Successfully changes the password",
-    name: updatedUser[0][0].name,
+    name: updatedUser[0][0].fullName,
   });
 
   return res
@@ -390,7 +485,11 @@ const changePassword = asyncHandler(async (req, res) => {
     );
 });
 
+const updateAccountDetails = asyncHandler(async (req, res) => {});
+
 export {
+  generateAccessAndRefreshToken,
+  refreshAccessToken,
   userRegistration,
   userLogin,
   userLogout,
@@ -399,4 +498,5 @@ export {
   resendOTP,
   forgetPassword,
   changePassword,
+  updateAccountDetails,
 };

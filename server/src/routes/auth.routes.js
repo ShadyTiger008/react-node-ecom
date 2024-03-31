@@ -4,6 +4,7 @@ import {
   forgetPassword,
   getCurrentUser,
   resendOTP,
+  updateAccountDetails,
   userLogin,
   userLogout,
   userRegistration,
@@ -31,5 +32,6 @@ router.route("/verify-email").post(verifyEmail);
 router.route("/resend-otp").get(resendOTP);
 router.route("/forget-password").post(verifyJWT, forgetPassword);
 router.route("/change-password").put(verifyJWT, changePassword);
+router.route("/update-user").put(verifyJWT, updateAccountDetails);
 
 export default router;

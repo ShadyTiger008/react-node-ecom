@@ -5,8 +5,6 @@ ToDo's:
 
   d. Refresh access token
 
-  e. Change current password
-
   g. Update user avatar
 
 
@@ -19,3 +17,5 @@ Done:
 
     b. Resend Verification Email
     - GET /api/auth/resend-verification-email?email=example%40gmail.com
+
+    e. Change current password
