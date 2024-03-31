@@ -5,7 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import bcrypt from "bcryptjs";
 import { generateRefreshToken } from "../helpers/auth.js";
 import { uploadOnCloudinary } from "../services/cloudinary.js";
-import { sendEmail } from "../services/send_emil.js";
+import { sendEmail } from "../services/send_email.js";
 import { generateOTP } from "../helpers/index.js";
 import { mailTypes } from "../constants/index.js";
 
@@ -66,6 +66,7 @@ const userRegistration = asyncHandler(async (req, res) => {
   if (!insertedUser[0]) throw new ApiErrorError(401, "Failed to add the user");
 
   await sendEmail({
+    mail_type: mailTypes[1],
     email: insertedUser[0][0].email,
     subject: "Verify E-Mail OTP",
     title: "Verify your email now",
@@ -87,7 +88,7 @@ const userRegistration = asyncHandler(async (req, res) => {
 const userLogin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
+  if (!email) {
     throw new ApiError(400, "Please provide all required fields!");
   }
 
@@ -97,14 +98,32 @@ const userLogin = asyncHandler(async (req, res) => {
     `SELECT * FROM users WHERE email='${email}'`
   );
   if (!existedUser[0].length) {
-    throw new ApiError(401, "Email or password is incorrect.");
+    throw new ApiError(401, "No user exits with this email!.");
   }
 
-  const isValidPassword = await bcrypt.compare(
-    password,
-    existedUser[0][0].password
-  );
-  if (!isValidPassword) throw new ApiError(401, "Invalid Password");
+  if (password) {
+    const isValidPassword = await bcrypt.compare(
+      password,
+      existedUser[0][0].password
+    );
+    if (!isValidPassword) throw new ApiError(401, "Invalid Password");
+  } else {
+    const generatedOtp = generateOTP();
+
+    await connection.query(`UPDATE users SET otp=? WHERE userID=?`, [
+      generatedOtp,
+      existedUser[0][0].userID,
+    ]);
+
+    await sendEmail({
+      mail_type: mailTypes[1],
+      email: existedUser[0][0].email,
+      subject: "Your Login OTP",
+      title: "One Time Password for User Account Verification",
+      otp: generatedOtp,
+      name: existedUser[0][0].fullName,
+    });
+  }
 
   const refreshToken = await generateRefreshToken({
     userId: existedUser[0][0].userID,
@@ -158,7 +177,7 @@ const userLogout = asyncHandler(async (req, res) => {
 
   if (!loggedUser) throw new ApiError(404, "No such user exists");
 
-  const updateUser = await connection.query(
+  await connection.query(
     `UPDATE users SET refreshToken=null WHERE userID='${loggedUser[0][0].userID}'`
   );
 
@@ -187,7 +206,6 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 const verifyEmail = asyncHandler(async (req, res) => {
   const email = req.query.email;
   const { otp } = req.body;
-  console.log(email, otp);
 
   const connection = await getConnection();
 
@@ -199,7 +217,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
     throw new ApiError(400, "No account with this email found.");
   }
 
-  if (user[0][0].isVerified === "1") {
+  if (user[0][0].isVerified === Boolean(1)) {
     throw new ApiResponse(500, "User is already verified!");
   }
 
@@ -214,18 +232,24 @@ const verifyEmail = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Invalid OTP provided!");
   }
 
-  console.log(user[0][0].otp);
-
   await connection.query(
-    `UPDATE users SET isVerified=1, otp=null WHERE email='${email}'`
+    `UPDATE users SET isVerified=1, otpVerified=1, otp=null WHERE email='${email}'`
   );
 
   const updatedUser = await connection.query(
     `SELECT * FROM users WHERE email='${email}'`
   );
 
+  await sendEmail({
+    mail_type: mailTypes[2],
+    email: updatedUser[0][0].email,
+    subject: "Your Email Verification was Successful",
+    title: "Email Verification Successful",
+    name: updatedUser[0][0].fullName,
+  });
+
   return res
-    .status(201)
+    .status(200)
     .json(
       new ApiResponse(
         200,
@@ -235,42 +259,136 @@ const verifyEmail = asyncHandler(async (req, res) => {
     );
 });
 
-  const resendOTP = asyncHandler(async (req, res) => {
-    const email = req.query.email;
+const resendOTP = asyncHandler(async (req, res) => {
+  const email = req.query.email;
 
-    const connection = await getConnection();
+  const connection = await getConnection();
 
-    const user = await connection.query(
-      `SELECT * FROM users WHERE email='${email}'`
+  const user = await connection.query(
+    `SELECT * FROM users WHERE email='${email}'`
+  );
+
+  if (!user || !user[0]?.length) {
+    throw new ApiError(400, "No account with this email found.");
+  }
+
+  const generatedOtp = generateOTP();
+
+  await connection.query(
+    `UPDATE users SET otp='${generatedOtp}' WHERE email='${user[0][0].email}'`
+  );
+
+  await sendEmail({
+    mail_type: mailTypes[1],
+    email: email,
+    subject: "Resend E-mail Otp",
+    title: "Your new Otp",
+    name: user[0][0].fullName,
+    otp: generatedOtp,
+  });
+
+  const updatedUser = await connection.query(
+    "SELECT * FROM users WHERE userID=?",
+    [user[0][0].userID]
+  );
+
+  return res
+    .status(201)
+    .json(new ApiResponse(200, updatedUser[0][0], "Resend OTP successfully!"));
+});
+
+const forgetPassword = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  const { password } = req.body;
+
+  const connection = await getConnection();
+
+  const loggedUser = await connection.query(
+    `SELECT * FROM users WHERE userID=?`,
+    [user.userID]
+  );
+
+  if (!loggedUser) throw new ApiError(404, "User not found");
+
+  if (password) {
+    const isValidPassword = await bcrypt.compare(
+      password,
+      loggedUser[0][0].password
     );
 
-    if (!user || !user[0]?.length) {
-      throw new ApiError(400, "No account with this email found.");
+    if (!isValidPassword) {
+      throw new ApiError(403, "Wrong current password!");
     }
-
-    const generatedOtp = await generateOTP();
+  } else {
+    const generatedOtp = generateOTP();
 
     await connection.query(
-      `UPDATE users SET otp='${generatedOtp}' WHERE email='${user[0][0].email}'`
-      );
-      
-      await sendEmail({
-        mail_type: mailTypes[6],
-        email: email,
-        subject: "Resend E-mail Otp",
-        title: "Your new Otp",
-        name: user[0][0].name,
-        otp: generatedOtp,
-      } );
-    
-    const updatedUser = await connection.query("SELECT * FROM users WHERE userID=?", [
-      user[0][0].userID,
-    ]);
+      `UPDATE users SET otp=${generatedOtp}, otpVerified=0, otpVerified=0 WHERE email='${user.email}'`
+    );
 
-    return res
-      .status(201)
-      .json(new ApiResponse(200, updatedUser[0][0], "Resend OTP successfully!"));
+    await sendEmail({
+      mail_type: mailTypes[1],
+      email: user?.email,
+      subject: "Forget Password E-mail Otp",
+      title: "Your Otp is",
+      name: user?.fullName,
+      otp: generatedOtp,
+    });
+  }
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, loggedUser[0][0], "Successfully sent the email!")
+    );
+});
+
+const changePassword = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  const { newPassword } = req.body;
+
+  const connection = await getConnection();
+
+  const loggedUser = await connection.query(
+    `SELECT * FROM users WHERE userID=?`,
+    [user.userID]
+  );
+
+  if (!loggedUser)
+    throw new ApiError(400, "There was a problem with your login.");
+
+  const isMatch = await bcrypt.compare(newPassword, loggedUser[0][0].password);
+
+  if (isMatch) throw new ApiError(402, "Old and new password can not be same!");
+
+  const newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await connection.query(`UPDATE users SET password=? WHERE userID=?`, [
+    newHashedPassword,
+    loggedUser[0][0].userID,
+  ]);
+
+  const updatedUser = await connection.query(
+    `SELECT * FROM users WHERE  userID=?`,
+    [loggedUser[0][0].userID]
+  );
+
+  await sendEmail({
+    mail_type: mailTypes[2],
+    email: updatedUser[0][0].email,
+    subject: "Your Password Has Been Changed.",
+    title: "Successfully changes the password",
+    name: updatedUser[0][0].name,
   });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedUser[0][0], "Password changed successfully")
+    );
+});
 
 export {
   userRegistration,
@@ -279,4 +397,6 @@ export {
   verifyEmail,
   getCurrentUser,
   resendOTP,
+  forgetPassword,
+  changePassword,
 };

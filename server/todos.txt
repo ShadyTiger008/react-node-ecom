@@ -1,13 +1,6 @@
 ToDo's:
 
 1. Auth Apis: 
-  a. Verify Email
-  - POST /api/auth/verify-email
-    Request Body: { email: 'example@gmail.com' }
-
-  b. Resend Verification Email
-  - GET /api/auth/resend-verification-email?email=example%40gmail.com
-
   c. Generate access and refresh token
 
   d. Refresh access token
@@ -19,3 +12,10 @@ ToDo's:
 
 Done:
     f. Get current logged in user
+
+    a. Verify Email
+    - POST /api/auth/verify-email
+        Request Body: { email: 'example@gmail.com' }
+
+    b. Resend Verification Email
+    - GET /api/auth/resend-verification-email?email=example%40gmail.com
