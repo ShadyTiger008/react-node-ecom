@@ -1,10 +1,7 @@
 ToDo's:
 
 1. Auth Apis: 
-  c. Generate access and refresh token
-
-  d. Refresh access token
-
+ 
   g. Update user avatar
 
 
@@ -19,3 +16,7 @@ Done:
     - GET /api/auth/resend-verification-email?email=example%40gmail.com
 
     e. Change current password
+
+    c. Generate access and refresh token
+
+    d. Refresh access token
