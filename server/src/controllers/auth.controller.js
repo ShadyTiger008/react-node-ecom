@@ -485,7 +485,87 @@ const changePassword = asyncHandler(async (req, res) => {
     );
 });
 
-const updateAccountDetails = asyncHandler(async (req, res) => {});
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullName, gender, address, city, zip, profileImage } = req.body;
+  const userId = req.user.userID;
+
+  if (!userId) throw new ApiError(403, "Unauthorized Request!");
+
+  const connection = await getConnection();
+
+  const loggedUser = await connection.query(
+    `SELECT * FROM users WHERE userID=?`,
+    [userId]
+  );
+  if (!loggedUser) throw new ApiError(404, "User not available!");
+
+  const avatarLocalPath = req.files?.avatar[0]?.path;
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar is required!");
+  }
+  console.log("Uploading avatar to Cloudinary:", avatarLocalPath);
+
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+  if (!avatar) {
+    console.error("Avatar upload to Cloudinary failed:", avatar);
+    throw new ApiError(400, "Avatar file is required!");
+  }
+
+  console.log("Avatar uploaded successfully:", avatar);
+
+  let updateField = [];
+  let values = [];
+
+  if (fullName) {
+    updateField.push("fullName=?");
+    values.push(fullName);
+  }
+  if (gender) {
+    updateField.push("gender=?");
+    values.push(gender);
+  }
+  if (address) {
+    updateField.push("address=?");
+    values.push(address);
+  }
+  if (city) {
+    updateField.push("city=?");
+    values.push(city);
+  }
+  if (zip) {
+    updateField.push("zip=?");
+    values.push(zip);
+  }
+  if (profileImage) {
+    updateField.push("profileImage=?");
+    values.push(avatar?.url);
+  }
+
+  if (updateFields.length === 0) {
+    res.status(400).json({ message: "No fields provided for update" });
+    return;
+  }
+
+  const query = `UPDATE users SET ${updateField.join(", ")} WHERE userID=`;
+
+  values.push(userId);
+
+  const isUpdated = await connection.query(query, values);
+
+  if (!isUpdated)
+    throw new ApiError(500, "Error occurred while updating the user!");
+
+  const updatedUser = await connection.query(
+    `SELECT * FROM users WHERE userID=?`,
+    [userId]
+  );
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "User updated successfully!"));
+});
 
 export {
   generateAccessAndRefreshToken,
