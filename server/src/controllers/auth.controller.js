@@ -486,10 +486,24 @@ const changePassword = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, gender, address, city, zip, profileImage } = req.body;
-  const userId = req.user.userID;
+  const { fullName, gender, address, city, zip } = req.body;
+
+  console.log(fullName, gender, address, city, zip);
+  const userId = req?.user?.userID;
+
+  console.log(userId);
 
   if (!userId) throw new ApiError(403, "Unauthorized Request!");
+
+  if (
+    fullName === "" &&
+    gender === "" &&
+    address === "" &&
+    city === "" &&
+    zip === "" 
+  ) {
+    throw new ApiError(401, "No data provided!");
+  }
 
   const connection = await getConnection();
 
@@ -497,23 +511,11 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     `SELECT * FROM users WHERE userID=?`,
     [userId]
   );
-  if (!loggedUser) throw new ApiError(404, "User not available!");
 
-  const avatarLocalPath = req.files?.avatar[0]?.path;
-
-  if (!avatarLocalPath) {
-    throw new ApiError(400, "Avatar is required!");
+  console.log(loggedUser[0][0]);
+  if (!loggedUser || !loggedUser.length) {
+    throw new ApiError(404, "User not available!");
   }
-  console.log("Uploading avatar to Cloudinary:", avatarLocalPath);
-
-  const avatar = await uploadOnCloudinary(avatarLocalPath);
-
-  if (!avatar) {
-    console.error("Avatar upload to Cloudinary failed:", avatar);
-    throw new ApiError(400, "Avatar file is required!");
-  }
-
-  console.log("Avatar uploaded successfully:", avatar);
 
   let updateField = [];
   let values = [];
@@ -538,17 +540,13 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     updateField.push("zip=?");
     values.push(zip);
   }
-  if (profileImage) {
-    updateField.push("profileImage=?");
-    values.push(avatar?.url);
-  }
 
-  if (updateFields.length === 0) {
+  if (updateField.length === 0) {
     res.status(400).json({ message: "No fields provided for update" });
     return;
   }
 
-  const query = `UPDATE users SET ${updateField.join(", ")} WHERE userID=`;
+  const query = `UPDATE users SET ${updateField.join(", ")} WHERE userID=?`;
 
   values.push(userId);
 
@@ -564,8 +562,11 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, updatedUser, "User updated successfully!"));
+    .json(
+      new ApiResponse(200, updatedUser[0][0], "User updated successfully!")
+    );
 });
+
 
 export {
   generateAccessAndRefreshToken,
