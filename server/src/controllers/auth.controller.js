@@ -486,12 +486,12 @@ const changePassword = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, gender, address, city, zip } = req.body;
+  const { fullName, gender, address, city, state, zip } = req.body;
 
-  console.log(fullName, gender, address, city, zip);
+  // console.log(fullName, gender, address, state, city, zip);
   const userId = req?.user?.userID;
 
-  console.log(userId);
+  // console.log(userId);
 
   if (!userId) throw new ApiError(403, "Unauthorized Request!");
 
@@ -500,6 +500,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     gender === "" &&
     address === "" &&
     city === "" &&
+    state === "" &&
     zip === ""
   ) {
     throw new ApiError(401, "No data provided!");
@@ -535,6 +536,10 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
   if (city) {
     updateField.push("city=?");
     values.push(city);
+  }
+  if (state) {
+    updateField.push("state=?");
+    values.push(state);
   }
   if (zip) {
     updateField.push("zip=?");
