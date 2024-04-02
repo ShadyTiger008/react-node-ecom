@@ -5,6 +5,7 @@ import {
   getCurrentUser,
   resendOTP,
   updateAccountDetails,
+  updateAvatar,
   userLogin,
   userLogout,
   userRegistration,
@@ -33,7 +34,7 @@ router.route("/resend-otp").get(resendOTP);
 router.route("/forget-password").post(verifyJWT, forgetPassword);
 router.route("/change-password").put(verifyJWT, changePassword);
 router.route("/update-user").put(verifyJWT, updateAccountDetails);
-router.route("/update-user").put(
+router.route("/update-avatar").put(
   verifyJWT,
   upload.fields([
     {
@@ -41,7 +42,7 @@ router.route("/update-user").put(
       maxCount: 1,
     },
   ]),
-  updateAccountDetails
+  updateAvatar
 );
 
 export default router;

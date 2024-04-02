@@ -500,7 +500,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     gender === "" &&
     address === "" &&
     city === "" &&
-    zip === "" 
+    zip === ""
   ) {
     throw new ApiError(401, "No data provided!");
   }
@@ -567,6 +567,54 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     );
 });
 
+const updateAvatar = asyncHandler(async (req, res) => {
+  const userId = req.user.userID;
+  if (!userId) throw new ApiError(403, "Unauthorized request!");
+
+  const connection = await getConnection();
+
+  const loggedUser = await connection.query(
+    `SELECT * FROM users WHERE userID=?`,
+    [userId]
+  );
+  if (!loggedUser) throw new ApiError(404, "User not available!");
+
+  const avatarLocalPath = req.files?.avatar[0]?.path;
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar is required!");
+  }
+  console.log("Uploading avatar to Cloudinary:", avatarLocalPath);
+
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+  if (!avatar) {
+    console.error("Avatar upload to Cloudinary failed:", avatar);
+    throw new ApiError(400, "Avatar file is required!");
+  }
+
+  console.log("Avatar uploaded successfully:", avatar);
+
+  await connection.query(`UPDATE users SET profileImage=? WHERE userID=?`, [
+    avatar?.url,
+    loggedUser[0][0]?.userID,
+  ]);
+
+  const user = await connection.query(`SELECT * FROM users WHERE userID=?`, [
+    loggedUser[0][0]?.userID,
+  ]);
+  if (!user) throw new ApiError(500, "User can't be updated! Please try again");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user[0][0],
+        "User profile image is updated successfully!"
+      )
+    );
+});
 
 export {
   generateAccessAndRefreshToken,
@@ -580,4 +628,5 @@ export {
   forgetPassword,
   changePassword,
   updateAccountDetails,
+  updateAvatar,
 };
