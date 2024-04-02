@@ -20,7 +20,7 @@ export const sendEmail = async ({
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Appening Add Library - Forget Password OTP</title>
+        <title>Chota Packet Bada Dhamaka - ${title}</title>
         <style>
             body {
                 font-family: 'Arial', sans-serif;
