@@ -13,6 +13,7 @@ import { uploadOnCloudinary } from "../services/cloudinary.js";
 import { sendEmail } from "../services/send_email.js";
 import { generateOTP } from "../helpers/index.js";
 import { mailTypes } from "../constants/index.js";
+import { config } from "../constants/environment.js";
 //Local Imports
 
 const generateAccessAndRefreshToken = async (userID) => {
@@ -53,10 +54,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
   if (!incomingToken) throw new ApiError(403, "Unauthorized Request!");
 
-  const decodedToken = jwt.decode(
-    incomingToken,
-    process.env.REFRESH_TOKEN_SECRET
-  );
+  const decodedToken = jwt.decode(incomingToken, config.get("ref_sec"));
 
   if (!decodedToken)
     throw new ApiError(500, "Error occurred while decoding token.");

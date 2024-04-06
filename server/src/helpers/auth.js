@@ -6,8 +6,8 @@ export const generateAccessToken = ({ userId, userEmail }) => {
       _id: userId,
       email: userEmail,
     },
-    process.env.ACCESS_TOKEN_SECRET || "access_token_secret",
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "1d" }
+    config.get("access_sec"),
+    { expiresIn: config.get("access_exp") }
   );
 };
 
@@ -17,7 +17,7 @@ export const generateRefreshToken = ({ userId, userEmail }) => {
       _id: userId,
       email: userEmail,
     },
-    process.env.REFRESH_TOKEN_SECRET || "refresh_token_secret",
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "30d" }
+    config.get("ref_sec"),
+    { expiresIn: config.get("ref_exp") }
   );
 };

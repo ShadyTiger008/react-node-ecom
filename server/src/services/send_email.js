@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import { mailTypes } from "../constants/index.js";
+import { config } from "../constants/environment.js";
 
 dotenv.config();
 
@@ -176,19 +177,17 @@ export const sendEmail = async ({
 
   try {
     const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || "smtp.gmail.com",
-      port: process.env.EMAIL_PORT || 465,
+      host: config.get("email_host"),
+      port: config.get("email_port"),
       secure: true,
       auth: {
-        user: process.env.EMAIL_USER || "chatterjeesoumyajeet@gmail.com",
-        pass: process.env.EMAIL_PASSWORD || "mgnm wynx zafz iopc",
+        user: config.get("email_user"),
+        pass: config.get("email_pass"),
       },
     });
 
     const mailOptions = {
-      from: `"Chota Packet Bada Dhamaka" <${
-        process.env.EMAIL_USER || "chatterjeesoumyajeet@gmail.com"
-      }>`,
+      from: `"Chota Packet Bada Dhamaka" <${config.get("ref_sec")}>`,
       to: email,
       subject: subject,
       html: emailTemplate,

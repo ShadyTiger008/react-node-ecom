@@ -6,7 +6,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: config.get('cors_origin'),
     credentials: true,
   })
 );
@@ -18,6 +18,7 @@ app.use(cookieParser());
 
 //routes import
 import authRouter from "./routes/auth.routes.js";
+import { config } from "./constants/environment.js";
 
 //routes declaration
 app.use("/api/v1/auth", authRouter);

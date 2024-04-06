@@ -2,15 +2,16 @@
 import mysql from "mysql2/promise";
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
+import { config } from "../constants/environment.js";
 
 dotenv.config();
 
 let pool;
 
-let Host = process.env.DB_HOST || "localhost";
-let User = process.env.DB_USER || "root";
-let Password = process.env.DB_PASSWORD || "soumya008";
-let Database = process.env.DB_NAME || "ecommerce";
+let Host = config.get("db_host");
+let User = config.get("db_user");
+let Password = config.get("db_pass");
+let Database = config.get("db_name");
 
 export const connectDB = async () => {
   try {

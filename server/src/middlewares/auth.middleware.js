@@ -13,10 +13,7 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
 
     if (!incomingToken) throw new ApiError(404, "Unauthorized request!");
 
-    const decodedToken = await jwt.decode(
-      incomingToken,
-      process.env.REFRESH_TOKEN_SECRET || "refresh_token_secret"
-    );
+    const decodedToken = await jwt.decode(incomingToken, config.get("ref_sec"));
 
     // console.log(decodedToken);
 
