@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
-import { config } from "../constants/environment";
+import { config } from "./environment.js";
 
 dotenv.config();
 
-export const server_url = `http://localhost:${config.get('port')}`;
+export const server_url = `http://localhost:${config.get("port")}`;

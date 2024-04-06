@@ -1,11 +1,16 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
-import { config } from "../constants/environment.js";
+import { config } from "../config/environment.js";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+console.log(config.get("cloud_name"));
 
 cloudinary.config({
-  cloud_name: config.get("ref_sec"),
-  api_key: config.get("ref_sec"),
-  api_secret: config.get("ref_sec"),
+  cloud_name: config.get("cloud_name"),
+  api_key: config.get("cloud_key"),
+  api_secret: config.get("cloud_api"),
 });
 
 const uploadOnCloudinary = async function (localFilePath) {

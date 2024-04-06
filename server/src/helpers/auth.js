@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { config } from "../config/environment.js";
 
 export const generateAccessToken = ({ userId, userEmail }) => {
   return jwt.sign(

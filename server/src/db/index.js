@@ -2,7 +2,7 @@
 import mysql from "mysql2/promise";
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
-import { config } from "../constants/environment.js";
+import { config } from "../config/environment.js";
 
 dotenv.config();
 

@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import { mailTypes } from "../constants/index.js";
-import { config } from "../constants/environment.js";
+import { config } from "../config/environment.js";
 
 dotenv.config();
 

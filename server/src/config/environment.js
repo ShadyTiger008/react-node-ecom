@@ -25,7 +25,7 @@ const _config = {
 
 // export const config = Object.freeze(_config);
 
-export const config = {
+const config = {
   get(key) {
     const value = _config[key];
 
@@ -40,4 +40,5 @@ export const config = {
   },
 };
 
+export { config };
 //console.log('Server.js', config.get('port'));

@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 // External Library Imports
 
 //Local Imports
+import { config } from "../config/environment.js";
 import { getConnection } from "../db/index.js";
 import ApiError from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -13,7 +14,6 @@ import { uploadOnCloudinary } from "../services/cloudinary.js";
 import { sendEmail } from "../services/send_email.js";
 import { generateOTP } from "../helpers/index.js";
 import { mailTypes } from "../constants/index.js";
-import { config } from "../constants/environment.js";
 //Local Imports
 
 const generateAccessAndRefreshToken = async (userID) => {
