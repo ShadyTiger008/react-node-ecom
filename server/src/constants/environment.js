@@ -23,7 +23,7 @@ const _config = {
 
 export const config = {
   get(key) {
-    const value = _config(key);
+    const value = _config[key];
 
     if (!value) {
       console.error(
