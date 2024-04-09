@@ -1,0 +1,118 @@
+.shopcategory-banner {
+    height: 480px;
+    width: 1200px;
+    display: block;
+    margin: 30px auto;
+    background-color: #fffce0; /* Light yellowish background color */
+    border-radius: 10px; /* Rounded corners */
+    padding: 20px; /* Padding around the banner */
+}
+
+.shopcategory-indexSort {
+    display: flex;
+    margin: 0px 170px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.shopcategory-sort {
+    /* Your existing styles */
+    color: red; /* Red color */
+    background-color: transparent; /* Transparent background */
+    border: 1px solid red; /* Red border */
+    transition: color 0.3s, background-color 0.3s; /* Smooth transition */
+}
+
+.shopcategory-sort:hover {
+    color: white; /* White color on hover */
+    background-color: red; /* Red background on hover */
+}
+
+.shopcategory-indexSort p span {
+    font-weight: 800;
+}
+
+.shopcategory-products {
+    width: 90%;
+    max-width: 1360px;
+    justify-content: center;
+    margin: 20px auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 25px;
+}
+
+.shopcategory-loadmore {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 100px auto;
+    width: 200px;
+    height: 60px;
+    border-radius: 75px;
+    background: #ededed;
+    color: #787878;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.load-more-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 200px; /* Set the desired width */
+    height: 60px; /* Set the desired height */
+    border-radius: 30px; /* Make it oval by setting half of the height as border-radius */
+    background-color: #ff4141; /* Red background color */
+    color: white; /* Text color */
+    font-size: 18px; /* Font size */
+    font-weight: bold; /* Bold font weight */
+    cursor: pointer; /* Cursor style */
+    outline: none; /* Remove default outline */
+    border: none; /* Remove border */
+    transition: background-color 0.3s; /* Smooth background color transition */
+}
+
+.load-more-button:hover {
+    background-color: #c30000; /* Darker red on hover */
+}
+
+.product-pagination {
+    font-size: 18px; /* Increased font size */
+    color: #555; /* Text color */
+    margin-bottom: 20px; /* Adjusted margin */
+}
+
+@media (max-width:1280px) {
+    .shopcategory-banner {
+        margin: 20px auto;
+        width: 90%;
+    }
+
+    .shopcategory-indexSort {
+        width: 90%;
+        margin: auto;
+    }
+
+    .shopcategory-sort {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+
+    .shopcategory-indexSort p {
+        font-size: 12px;
+    }
+}
+
+@media (max-width:800px) {
+    .shopcategory-banner {
+        width: 95%;
+    }
+
+    .shopcategory-loadmore {
+        margin: 60px auto;
+        width: 150px;
+        height: 40px;
+        font-size: 13px;
+    }
+}
