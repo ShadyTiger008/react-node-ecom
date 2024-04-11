@@ -15,8 +15,8 @@ const router = express.Router();
 router.route("/admin/add-product").post(
   upload.fields([
     {
-      name: "avatar",
-      maxCount: 1,
+      name: "image",
+      maxCount: 10,
     },
   ]),
   addProduct
@@ -26,8 +26,8 @@ router.route("/update-product").put(
   verifyJWT,
   upload.fields([
     {
-      name: "avatar",
-      maxCount: 1,
+      name: "image",
+      maxCount: 10,
     },
   ]),
   updateProduct
