@@ -117,27 +117,49 @@ const userRegistration = asyncHandler(async (req, res) => {
 
   console.log("Hashed Password: ", hashedPassword);
 
-  const avatarLocalPath = req.files?.avatar[0]?.path;
+  let avatarUrl = null;
 
-  if (!avatarLocalPath) {
-    throw new ApiError(400, "Avatar is required!");
+  if (req?.files && req.files.avatar) {
+    const avatarLocalPath = req.files && req.files?.avatar[0]?.path;
+
+    if (!avatarLocalPath) {
+      throw new ApiError(400, "Avatar is required!");
+    }
+    console.log("Uploading avatar to Cloudinary:", avatarLocalPath);
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+    avatarUrl = avatar?.url;
+
+    if (!avatar) {
+      console.error("Avatar upload to Cloudinary failed:", avatar);
+      throw new ApiError(400, "Avatar file is required!");
+    }
+
+    console.log("Avatar uploaded successfully:", avatar);
   }
-  console.log("Uploading avatar to Cloudinary:", avatarLocalPath);
-
-  const avatar = await uploadOnCloudinary(avatarLocalPath);
-
-  if (!avatar) {
-    console.error("Avatar upload to Cloudinary failed:", avatar);
-    throw new ApiError(400, "Avatar file is required!");
-  }
-
-  console.log("Avatar uploaded successfully:", avatar);
 
   const generatedOtp = await generateOTP();
 
+  let queryFields = ["userID", "fullName", "email", "phone", "password", "otp"];
+  let queryValues = [
+    userId,
+    fullName,
+    email,
+    phone,
+    hashedPassword,
+    generatedOtp,
+  ];
+
+  if (avatarUrl !== null) {
+    queryFields.push("profileImage");
+    queryValues.push(avatarUrl);
+  }
+
   const user = await connection.query(
-    `INSERT INTO users (userID, fullName, email, phone, password, profileImage, otp) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [userId, fullName, email, phone, hashedPassword, avatar.url, generatedOtp]
+    `INSERT INTO users (${queryFields.join(", ")}) VALUES (${queryValues
+      .map(() => "?")
+      .join(", ")})`, queryValues
   );
 
   if (!user) {
