@@ -1,0 +1,78 @@
+.offers {
+    margin: 100px auto;
+    width: 65%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0px 8%;
+    margin-bottom: 150px;
+    background: linear-gradient(180deg, #ffcd88 0%, #70e1f5 100%); /* Updated gradient background */
+}
+
+.offers-left h1 {
+    color: #2c2c2c; /* Updated heading color */
+    font-size: 60px;
+    font-weight: 900; /* Increased font weight for bolder text */
+    font-style: italic; /* Added italic style for slanting text */
+}
+
+.offers-left p {
+    color: #2c2c2c; /* Updated text color */
+    font-size: 16px;
+    font-weight: 600; /* Increased font weight for bolder text */
+    font-style: italic; /* Added italic style for slanting text */
+}
+
+.offers-left button {
+    width: 230px;
+    height: 60px;
+    border-radius: 35px;
+    background: palevioletred; /* Updated button background color */
+    border: none;
+    color: white;
+    font-size: 20px;
+    font-weight: 700; /* Increased font weight for bolder text */
+    font-style: italic; /* Added italic style for slanting text */
+    margin-top: 30px;
+    cursor: pointer;
+}
+
+.offers-right img {
+    width: 320px;
+    padding-top: 20px;
+}
+
+/* ----- media query----- */
+
+@media(max-width:1280px){
+    .offers-right img{
+        width: 300px;
+    }
+    .offers-left h1{
+        font-size: 40px;
+    }
+    .offers-left p{
+        font-size: 14px;
+    }
+    .offers-left button{
+        width: 200px;
+        height: 50px;
+        
+        font-size: 18px;
+        margin-top: 25px;
+    }
+}
+@media(max-width:1024px){
+    .offers-right img{
+        width: 200px;
+    }
+}
+@media(max-width:800px){
+    .offers-right{
+        display: none;
+    }
+    .offers{
+        padding: 50px 8%;
+    }
+}

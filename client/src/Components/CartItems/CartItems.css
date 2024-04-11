@@ -1,0 +1,117 @@
+.cartitems {
+    margin: 100px 10%;
+    background-image: linear-gradient(to bottom right, #fff3e0, #ffd54f); /* Yellowish gradient background */
+    border-radius: 10px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Box shadow for depth */
+    padding: 20px; /* Padding around the box */
+}
+
+.cartitems hr {
+    height: 2px;
+    background: #e2e2e2;
+    border: 0;
+}
+
+.cartitems-format-main {
+    display: grid;
+    grid-template-columns: 0.5fr 2fr 1fr 1fr 1fr 1fr;
+    align-items: center;
+    gap: 20px; /* Reduced gap */
+    padding: 15px 0px; /* Reduced padding */
+    color: #454545;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.cartitems-format {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.carticon-product-icon {
+    height: 55px;
+}
+
+.cartitems-remove-icon {
+    width: 12px;
+    margin: 0px 30px;
+    cursor: pointer;
+}
+
+.cartitems-quantity {
+    width: 55px;
+    height: 45px;
+    border: 2px solid #ebebeb;
+    background: #fff;
+}
+
+.cartitems-down {
+    margin: 50px 0px; /* Reduced margin */
+}
+
+.cartitems-total {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 30px; /* Reduced gap */
+}
+
+.cartitems-total-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0px;
+}
+
+.cartitems-total button {
+    width: 80%; /* Full width button */
+    margin-left: 100px;
+    height: 50px;
+    outline: none;
+    border: none;
+    background: #ff5a5a;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cartitems-promocode {
+    flex: 1;
+    margin-top: 10px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.cartitems-promobox {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 400px; /* Maximum width for responsiveness */
+    margin-top: 15px;
+    height: 50px;
+    background: #f5f5f5; /* Light background color */
+    border-radius: 8px; /* Rounded corners */
+    padding: 0 10px; /* Padding around the box */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Box shadow for depth */
+}
+
+.cartitems-promobox input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 16px;
+    flex: 1;
+    height: 100%;
+    padding-left: 10px; /* Adjusted padding */
+}
+
+.cartitems-promobox button {
+    width: 100px; /* Adjusted width */
+    height: 100%;
+    font-size: 16px;
+    background: orangered; /* Yellowish background */
+    color: #fff;
+    border: none;
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer;
+}
