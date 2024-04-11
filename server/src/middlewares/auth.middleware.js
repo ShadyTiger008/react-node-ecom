@@ -4,7 +4,7 @@ import ApiError from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 
-export const verifyJWT = asyncHandler(async (req, _, next) => {
+export const verifyJWT = async (req, _, next) => {
   try {
     const incomingToken =
       req.cookies.refreshToken ||
@@ -35,6 +35,27 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
     }
 
     req.user = user[0][0];
+    next();
+  } catch (error) {
+    throw new ApiError(401, error?.message || "Invalid access token");
+  }
+};
+
+export const checkAdmin = asyncHandler(async (req, _, next) => {
+  try {
+    const incomingUserID = req.user.userID;
+    if (!incomingUserID) throw new ApiError(403, "No logged in user!");
+
+    const connection = await getConnection();
+    const loggedUser = await connection.query(
+      `SELECT * FROM users WHERE userID=?`,
+      [incomingUserID]
+    );
+    if (!loggedUser) throw new ApiError(403, "Not a valid user!");
+
+    const isAdmin = loggedUser[0][0].type === 2 ? true : false;
+    if (!isAdmin) throw new ApiError(403, "Unauthorized! Not an admin.");
+
     next();
   } catch (error) {
     throw new ApiError(401, error?.message || "Invalid access token");
