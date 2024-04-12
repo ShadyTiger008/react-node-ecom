@@ -1,4 +1,5 @@
 import { getConnection } from "../db/index.js";
+import { uploadOnCloudinary } from "../services/cloudinary.js";
 import ApiError from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -15,14 +16,74 @@ const addProduct = asyncHandler(async (req, res) => {
     ratings,
   } = req.body;
 
-  const connection = getConnection();
+  const queryFields = [
+    "title",
+    "description",
+    "price",
+    "category",
+    "subcategory",
+    "sizes",
+    "colors",
+    "ratings",
+  ];
 
-  const productAdded = await connection.query(
-    `INSERT INTO products (title, description, price, category, subcategory, sizes, colors, ratings) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [title, description, price, category, subcategory, sizes, colors, ratings]
-  );
+  let queryValues = [
+    title,
+    description,
+    price,
+    category,
+    subcategory,
+    sizes,
+    colors,
+    ratings,
+  ];
 
-  if (!productAdded) throw new ApiError(500, "Product can't be added!");
+  const connection = await getConnection();
+
+  let uploadedImageArray = [];
+
+  if (req.files && req.files.images) {
+    const imagesArray = req.files.images;
+    const imagesLocalPath = imagesArray.map((image) => image.path);
+
+    console.log("Images local path: ", imagesLocalPath);
+
+    if (!imagesLocalPath) {
+      throw new ApiError(400, "Images are required!");
+    }
+
+    console.log("Uploading images to Cloudinary:", imagesLocalPath);
+
+    const uploadedImages = await Promise.all(
+      imagesLocalPath.map(uploadOnCloudinary)
+    );
+
+    uploadedImages.forEach((image) => {
+      uploadedImageArray.push(image.url);
+    });
+
+    if (!uploadedImageArray.length) {
+      console.error("Images upload to Cloudinary failed:", imagesLocalPath);
+      throw new ApiError(400, "Image files are required!");
+    }
+
+    queryFields.push("images");
+    queryValues.push(JSON.stringify(uploadedImageArray));
+  }
+
+  console.log("Query fields: ", queryFields);
+  console.log("Query values: ", queryValues);
+
+  const placeholders = queryValues.map(() => "?").join(", ");
+  const query = `INSERT INTO products (${queryFields.join(
+    ", "
+  )}) VALUES (${placeholders})`;
+
+  const productAdded = await connection.query(query, queryValues);
+
+  if (!productAdded) {
+    throw new ApiError(500, "Product can't be added!");
+  }
 
   return res
     .status(200)
@@ -34,6 +95,7 @@ const addProduct = asyncHandler(async (req, res) => {
       )
     );
 });
+
 
 const updateProduct = asyncHandler(async (req, res) => {});
 const deleteProduct = asyncHandler(async (req, res) => {});

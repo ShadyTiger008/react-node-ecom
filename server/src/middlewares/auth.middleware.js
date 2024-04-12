@@ -10,8 +10,6 @@ export const verifyJWT = async (req, _, next) => {
       req.cookies.refreshToken ||
       req.header("Authorization")?.replace("Bearer ", "");
 
-    // console.log(incomingToken);
-
     if (!incomingToken) throw new ApiError(404, "Unauthorized request!");
 
     const decodedToken = await jwt.decode(incomingToken, config.get("ref_sec"));
@@ -39,7 +37,7 @@ export const verifyJWT = async (req, _, next) => {
 
 export const checkAdmin = asyncHandler(async (req, _, next) => {
   try {
-    const incomingUserID = req.user.userID;
+    const incomingUserID = req.user?.userID;
     if (!incomingUserID) throw new ApiError(403, "No logged in user!");
 
     const connection = await getConnection();

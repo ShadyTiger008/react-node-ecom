@@ -12,13 +12,15 @@ import {
 
 const router = express.Router();
 
-router.route("/admin/add-product").post(
+router.route("/add-product").post(
   upload.fields([
     {
-      name: "image",
+      name: "images",
       maxCount: 10,
     },
-  ]), checkAdmin,
+  ]),
+  verifyJWT,
+  checkAdmin,
   addProduct
 );
 
@@ -36,6 +38,5 @@ router.route("/delete-product").delete(verifyJWT, deleteProduct);
 router.route("/get-product").get(getProductByID);
 router.route("/add-to-cart").post(verifyJWT, addToCart);
 router.route("/remove-from-cart").post(verifyJWT, removeFromCart);
-
 
 export default router;
