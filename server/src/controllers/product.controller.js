@@ -11,6 +11,7 @@ const addProduct = asyncHandler(async (req, res) => {
     price,
     category,
     subcategory,
+    gender,
     sizes,
     colors,
     ratings,
@@ -22,6 +23,7 @@ const addProduct = asyncHandler(async (req, res) => {
     "price",
     "category",
     "subcategory",
+    "gender",
     "sizes",
     "colors",
     "ratings",
@@ -33,6 +35,7 @@ const addProduct = asyncHandler(async (req, res) => {
     price,
     category,
     subcategory,
+    gender,
     sizes,
     colors,
     ratings,
@@ -95,7 +98,6 @@ const addProduct = asyncHandler(async (req, res) => {
       )
     );
 });
-
 
 const updateProduct = asyncHandler(async (req, res) => {});
 const deleteProduct = asyncHandler(async (req, res) => {});
