@@ -13,14 +13,14 @@ import {
 const router = express.Router();
 
 router.route("/add-product").post(
+  verifyJWT,
+  checkAdmin,
   upload.fields([
     {
       name: "images",
       maxCount: 10,
     },
   ]),
-  verifyJWT,
-  checkAdmin,
   addProduct
 );
 
@@ -35,6 +35,7 @@ router.route("/update-product").put(
   ]),
   updateProduct
 );
+
 router.route("/delete-product").delete(verifyJWT, checkAdmin, deleteProduct);
 router.route("/get-product").get(getProductByID);
 router.route("/add-to-cart").post(verifyJWT, addToCart);
