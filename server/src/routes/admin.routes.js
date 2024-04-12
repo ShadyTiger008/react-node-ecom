@@ -4,6 +4,6 @@ import { makeAdmin } from "../controllers/admin.controller.js";
 
 const router = express.Router();
 
-router.route("/make-admin").delete(verifyJWT, checkAdmin, makeAdmin);
+router.route("/make-admin").post(verifyJWT, checkAdmin, makeAdmin);
 
 export default router;

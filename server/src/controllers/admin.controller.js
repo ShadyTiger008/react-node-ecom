@@ -1,7 +1,7 @@
-import { getConnection } from "../db";
-import ApiError from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
-import { asyncHandler } from "../utils/asyncHandler";
+import { getConnection } from "../db/index.js";
+import ApiError from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 const makeAdmin = asyncHandler(async (req, res) => {
   const { email } = req.body;
