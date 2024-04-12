@@ -291,7 +291,33 @@ const getProductByID = asyncHandler(async (req, res) => {
     );
 });
 
-const addToCart = asyncHandler(async (req, res) => {});
+const addToCart = asyncHandler(async (req, res) => {
+  const userId = req.user?.userID;
+  if (!userId) throw new ApiError(403, "No logged in user found!");
+
+  const productId = req.query.productId;
+  if ( !productId ) throw new ApiError( 402, "Product id is required!" );
+  
+  // console.log("Quantity ",req.body.quantity);
+
+  let qty = req.body?.quantity ? req?.body?.quantity : 1;
+  if (qty < 1) throw new ApiError(400, "Quantity must be greater than 0");
+
+  const connection = await getConnection();
+
+  const isAddedToCart = await connection.query(
+    `INSERT INTO carts (productID, userID, quantity) VALUES (?, ?, ?)`,
+    [productId, userId, qty]
+  );
+  if (!isAddedToCart) throw new ApiError(500, "Can't add the item into cart");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, isAddedToCart, "Product successfully added to cart")
+    );
+});
+
 const removeFromCart = asyncHandler(async (req, res) => {});
 
 export {
