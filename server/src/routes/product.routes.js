@@ -1,5 +1,5 @@
 import express from "express";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { checkAdmin, verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import {
   addProduct,
@@ -18,7 +18,7 @@ router.route("/admin/add-product").post(
       name: "image",
       maxCount: 10,
     },
-  ]),
+  ]), checkAdmin,
   addProduct
 );
 
