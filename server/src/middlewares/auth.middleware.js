@@ -16,8 +16,6 @@ export const verifyJWT = async (req, _, next) => {
 
     const decodedToken = await jwt.decode(incomingToken, config.get("ref_sec"));
 
-    // console.log(decodedToken);
-
     if (!decodedToken) throw new ApiError(401, "Invalid token!");
 
     const userId = decodedToken?._id;
@@ -27,8 +25,6 @@ export const verifyJWT = async (req, _, next) => {
     const user = await connection.query(
       `SELECT * FROM users WHERE userID='${userId}'`
     );
-
-    // console.log("Auth middleware User: ", user);
 
     if (!user) {
       throw new ApiError(401, "Invalid access token!");
