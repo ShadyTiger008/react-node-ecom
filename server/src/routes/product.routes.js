@@ -34,7 +34,7 @@ router.route("/update-product").put(
   ]),
   updateProduct
 );
-router.route("/delete-product").delete(verifyJWT, deleteProduct);
+router.route("/delete-product").delete(verifyJWT, checkAdmin, deleteProduct);
 router.route("/get-product").get(getProductByID);
 router.route("/add-to-cart").post(verifyJWT, addToCart);
 router.route("/remove-from-cart").post(verifyJWT, removeFromCart);
