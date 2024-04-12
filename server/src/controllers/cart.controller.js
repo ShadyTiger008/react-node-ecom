@@ -60,7 +60,45 @@ const removeFromCart = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Successfully removed the item from cart!"));
 });
 
-const updateCart = asyncHandler(async (req, res) => {});
+const updateCart = asyncHandler(async (req, res) => {
+  const userId = req.user?.userID;
+  if (!userId) throw new ApiError(403, "No logged in user found!");
+
+  const cartId = req.query.cartId;
+  if (!cartId) throw new ApiError(402, "Product id is required!");
+
+  // console.log("Quantity ",req.body.quantity);
+
+  let qty = req.body?.quantity;
+  if (qty < 1) throw new ApiError(400, "Quantity must be greater than 0");
+
+  const connection = await getConnection();
+
+  const cartItem = await connection.query(
+    `SELECT * FROM carts WHERE cartID=?`,
+    [cartId]
+  );
+
+  if (cartItem[0][0]?.userID !== userId)
+    throw new ApiError(403, "You are not authorized to update this cart item!");
+
+  const isUpdated = await connection.query(
+    `UPDATE carts SET quantity=? WHERE cartID=?`,
+    [qty, cartId]
+  );
+  if (!isUpdated) throw new ApiError(500, "Can't add the item into cart");
+
+  const updatedItem = await connection.query(
+    `SELECT * FROM carts WHERE cartID`,
+    [userId, cartId]
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedItem[0][0], "Product successfully added to cart")
+    );
+});
 
 const getCart = asyncHandler(async (req, res) => {});
 
