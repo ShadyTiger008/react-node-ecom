@@ -3,6 +3,8 @@ import ApiError from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
+//TODO: Changes in make admin controller -> If user is already exists with that email then it will update the user role other wise it will create a new admin
+
 const makeAdmin = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
@@ -35,4 +37,8 @@ const makeAdmin = asyncHandler(async (req, res) => {
     );
 });
 
-export { makeAdmin };
+const updateAdmin = asyncHandler(async (req, res) => {});
+
+const deleteAdmin = asyncHandler(async (req, res) => {});
+
+export { makeAdmin, updateAdmin, deleteAdmin };
