@@ -106,7 +106,7 @@ const getCart = asyncHandler(async (req, res) => {
   const connection = await getConnection();
 
   const cartItems = await connection.query(
-    `SELECT carts.cartID, carts.productID, carts.quantity, products.title, products.description, products.actualPrice, products.currentPrice, products.category, products.subcategory, products.sizes, products.colors, products.ratings, products.images 
+    `SELECT carts.cartID, carts.productID, carts.quantity, products.title, products.description, products.actualPrice, products.currentPrice, products.category, products.subcategory, products.gender, products.sizes, products.colors, products.ratings, products.images 
      FROM carts 
      INNER JOIN products ON carts.productID = products.productID
      WHERE carts.userID=?`,
@@ -128,6 +128,7 @@ const getCart = asyncHandler(async (req, res) => {
       actual_price: item.actualPrice,
       category: item.category,
       sub_category: item.subcategory,
+      gender: item.gender,
       sizes: item.sizes,
       colors: item.colors,
       ratings: item.ratings,
