@@ -26,9 +26,10 @@ router.route("/add-product").post(
 
 router.route("/update-product").put(
   verifyJWT,
+  checkAdmin,
   upload.fields([
     {
-      name: "image",
+      name: "images",
       maxCount: 10,
     },
   ]),

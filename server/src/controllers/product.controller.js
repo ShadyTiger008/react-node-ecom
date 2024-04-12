@@ -111,7 +111,143 @@ const addProduct = asyncHandler(async (req, res) => {
     );
 });
 
-const updateProduct = asyncHandler(async (req, res) => {});
+const updateProduct = asyncHandler(async (req, res) => {
+  const productId = req.query.productId;
+
+  const {
+    title,
+    description,
+    actualPrice,
+    currentPrice,
+    category,
+    subcategory,
+    isNew,
+    isFeatured,
+    isBestSeller,
+    gender,
+    sizes,
+    colors,
+    ratings,
+  } = req.body;
+
+  const queryFields = [];
+
+  let queryValues = [];
+
+  if (title) {
+    queryFields.push("title");
+    queryValues.push(title);
+  }
+  if (description) {
+    queryFields.push("description");
+    queryValues.push(description);
+  }
+  if (actualPrice) {
+    queryFields.push("actualPrice");
+    queryValues.push(actualPrice);
+  }
+  if (currentPrice) {
+    queryFields.push("currentPrice");
+    queryValues.push(currentPrice);
+  }
+  if (category) {
+    queryFields.push("category");
+    queryValues.push(category);
+  }
+  if (subcategory) {
+    queryFields.push("subcategory");
+    queryValues.push(subcategory);
+  }
+  if (isNew) {
+    queryFields.push("isNew");
+    queryValues.push(isNew);
+  }
+  if (isFeatured) {
+    queryFields.push("isFeatured");
+    queryValues.push(isFeatured);
+  }
+  if (isBestSeller) {
+    queryFields.push("isBestSeller");
+    queryValues.push(isBestSeller);
+  }
+  if (gender) {
+    queryFields.push("gender");
+    queryValues.push(gender);
+  }
+  if (sizes) {
+    queryFields.push("sizes");
+    queryValues.push(sizes);
+  }
+  if (colors) {
+    queryFields.push("colors");
+    queryValues.push(colors);
+  }
+  if (ratings) {
+    queryFields.push("ratings");
+    queryValues.push(ratings);
+  }
+
+  const connection = await getConnection();
+
+  let uploadedImageArray = [];
+
+  if (req.files && req.files.images) {
+    const imagesArray = req.files.images;
+    const imagesLocalPath = imagesArray.map((image) => image.path);
+
+    // console.log("Images local path: ", imagesLocalPath);
+
+    if (!imagesLocalPath) {
+      throw new ApiError(400, "Images are required!");
+    }
+
+    // console.log("Uploading images to Cloudinary:", imagesLocalPath);
+
+    const uploadedImages = await Promise.all(
+      imagesLocalPath.map(uploadOnCloudinary)
+    );
+
+    uploadedImages.forEach((image) => {
+      uploadedImageArray.push(image.url);
+    });
+
+    if (!uploadedImageArray.length) {
+      console.error("Images upload to Cloudinary failed:", imagesLocalPath);
+      throw new ApiError(400, "Image files are required!");
+    }
+
+    queryFields.push("images");
+    queryValues.push(JSON.stringify(uploadedImageArray));
+  }
+
+  // console.log("Query fields: ", queryFields);
+  // console.log("Query values: ", queryValues);
+
+  const fieldsToUpdate = queryFields.map((field) => `${field}=?`).join(", ");
+  const fieldValues = [...queryValues, productId];
+  const query = `UPDATE products SET ${fieldsToUpdate} WHERE productID=?`;
+
+  const productUpdated = await connection.query(query, fieldValues);
+
+  if (!productUpdated) {
+    throw new ApiError(500, "Product can't be added!");
+  }
+
+  const updatedProduct = await connection.query(
+    `SELECT * FROM products WHERE productID=?`,
+    [productId]
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        201,
+        updatedProduct[0][0],
+        "Product successfully created!"
+      )
+    );
+});
 
 const deleteProduct = asyncHandler(async (req, res) => {
   const productId = req.query.productId;
