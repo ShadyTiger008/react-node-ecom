@@ -3,12 +3,11 @@ import { checkAdmin, verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import {
   addProduct,
-  addToCart,
   deleteProduct,
   getProductByID,
-  removeFromCart,
   updateProduct,
 } from "../controllers/product.controller.js";
+import { addToCart, removeFromCart } from "../controllers/cart.controller.js";
 
 const router = express.Router();
 
@@ -36,9 +35,9 @@ router.route("/update-product").put(
   updateProduct
 );
 
-router.route("/delete-product").delete(verifyJWT, checkAdmin, deleteProduct);
+router.route( "/delete-product" ).delete( verifyJWT, checkAdmin, deleteProduct );
+
 router.route("/get-product").get(getProductByID);
-router.route("/add-to-cart").post(verifyJWT, addToCart);
-router.route("/remove-from-cart").post(verifyJWT, removeFromCart);
+
 
 export default router;
