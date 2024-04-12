@@ -7,26 +7,25 @@ const addToCart = asyncHandler(async (req, res) => {
   const userId = req.user?.userID;
   if (!userId) throw new ApiError(403, "No logged in user found!");
 
-  const productId = req.query.productId;
-  if (!productId) throw new ApiError(402, "Product id is required!");
+  const productsId = req.query.productsId;
+  if (!productsId) throw new ApiError(400, "products id is required!");
 
-  // console.log("Quantity ",req.body.quantity);
-
-  let qty = req.body?.quantity ? req?.body?.quantity : 1;
+  let qty = req.body?.quantity || 1;
   if (qty < 1) throw new ApiError(400, "Quantity must be greater than 0");
 
   const connection = await getConnection();
 
   const isAddedToCart = await connection.query(
-    `INSERT INTO carts (productID, userID, quantity) VALUES (?, ?, ?)`,
-    [productId, userId, qty]
+    `INSERT INTO carts (productsID, userID, quantity) VALUES (?, ?, ?)`,
+    [productsId, userId, qty]
   );
-  if (!isAddedToCart) throw new ApiError(500, "Can't add the item into cart");
+
+  if (!isAddedToCart) throw new ApiError(500, "Can't add the item to the cart");
 
   return res
     .status(200)
     .json(
-      new ApiResponse(200, isAddedToCart, "Product successfully added to cart")
+      new ApiResponse(200, isAddedToCart, "products successfully added to cart")
     );
 });
 
@@ -35,7 +34,7 @@ const removeFromCart = asyncHandler(async (req, res) => {
   if (!userId) throw new ApiError(403, "No logged in user found!");
 
   const cartId = req.query.cartId;
-  if (!cartId) throw new ApiError(402, "Cart id is required!");
+  if (!cartId) throw new ApiError(400, "Cart id is required!");
 
   const connection = await getConnection();
 
@@ -43,21 +42,20 @@ const removeFromCart = asyncHandler(async (req, res) => {
     `SELECT * FROM carts WHERE cartID=?`,
     [cartId]
   );
-  if (!cartItem)
-    throw new ApiError(404, "Cart item is deleted or something else");
 
-  if (cartItem[0][0]?.userID !== userId) {
+  if (!cartItem[0][0] || cartItem[0][0].userID !== userId) {
     throw new ApiError(403, "You are not authorized to delete this item");
   }
 
   const isDeleted = await connection.query(`DELETE FROM carts WHERE cartID=?`, [
-    cartItem[0][0]?.cartID,
+    cartId,
   ]);
-  if (!isDeleted) throw new ApiError(500, "Can't delete the item from cart");
+  if (!isDeleted)
+    throw new ApiError(500, "Can't delete the item from the cart");
 
   res
     .status(200)
-    .json(new ApiResponse(200, {}, "Successfully removed the item from cart!"));
+    .json(new ApiResponse(200, {}, "Successfully removed the item from cart"));
 });
 
 const updateCart = asyncHandler(async (req, res) => {
@@ -65,12 +63,11 @@ const updateCart = asyncHandler(async (req, res) => {
   if (!userId) throw new ApiError(403, "No logged in user found!");
 
   const cartId = req.query.cartId;
-  if (!cartId) throw new ApiError(402, "Product id is required!");
-
-  // console.log("Quantity ",req.body.quantity);
+  if (!cartId) throw new ApiError(400, "Cart id is required!");
 
   let qty = req.body?.quantity;
-  if (qty < 1) throw new ApiError(400, "Quantity must be greater than 0");
+  if (!qty || qty < 1)
+    throw new ApiError(400, "Quantity must be greater than 0");
 
   const connection = await getConnection();
 
@@ -79,27 +76,74 @@ const updateCart = asyncHandler(async (req, res) => {
     [cartId]
   );
 
-  if (cartItem[0][0]?.userID !== userId)
+  if (!cartItem[0][0] || cartItem[0][0].userID !== userId) {
     throw new ApiError(403, "You are not authorized to update this cart item!");
+  }
 
   const isUpdated = await connection.query(
     `UPDATE carts SET quantity=? WHERE cartID=?`,
     [qty, cartId]
   );
-  if (!isUpdated) throw new ApiError(500, "Can't add the item into cart");
+
+  if (!isUpdated) throw new ApiError(500, "Can't update the item in the cart");
 
   const updatedItem = await connection.query(
-    `SELECT * FROM carts WHERE cartID`,
-    [userId, cartId]
+    `SELECT * FROM carts WHERE cartID=?`,
+    [cartId]
   );
 
   return res
     .status(200)
     .json(
-      new ApiResponse(200, updatedItem[0][0], "Product successfully added to cart")
+      new ApiResponse(200, updatedItem[0][0], "Cart item updated successfully")
     );
 });
 
-const getCart = asyncHandler(async (req, res) => {});
+const getCart = asyncHandler(async (req, res) => {
+  const userId = req.user?.userID;
+  if (!userId) throw new ApiError(403, "No logged in user found!");
+
+  const connection = await getConnection();
+
+  const cartItems = await connection.query(
+    `SELECT carts.cartID, carts.productID, carts.quantity, products.title, products.description, products.actualPrice, products.currentPrice, products.category, products.subcategory, products.sizes, products.colors, products.ratings, products.images 
+     FROM carts 
+     INNER JOIN products ON carts.productID = products.productID
+     WHERE carts.userID=?`,
+    [userId]
+  );
+
+  if (!cartItems[0].length) {
+    return res.status(200).json(new ApiResponse(200, [], "Cart is empty"));
+  }
+
+  const formattedCartItems = cartItems[0].map((item) => ({
+    cartID: item.cartID,
+    productID: item.productID,
+    quantity: item.quantity,
+    product: {
+      title: item.title,
+      description: item.description,
+      current_price: item.currentPrice,
+      actual_price: item.actualPrice,
+      category: item.category,
+      sub_category: item.subcategory,
+      sizes: item.sizes,
+      colors: item.colors,
+      ratings: item.ratings,
+      images: item.images,
+    },
+  }));
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        formattedCartItems,
+        "Cart items retrieved successfully"
+      )
+    );
+});
 
 export { addToCart, removeFromCart, updateCart, getCart };
