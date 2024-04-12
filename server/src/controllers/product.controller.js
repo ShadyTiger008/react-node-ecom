@@ -296,8 +296,8 @@ const addToCart = asyncHandler(async (req, res) => {
   if (!userId) throw new ApiError(403, "No logged in user found!");
 
   const productId = req.query.productId;
-  if ( !productId ) throw new ApiError( 402, "Product id is required!" );
-  
+  if (!productId) throw new ApiError(402, "Product id is required!");
+
   // console.log("Quantity ",req.body.quantity);
 
   let qty = req.body?.quantity ? req?.body?.quantity : 1;
@@ -318,7 +318,35 @@ const addToCart = asyncHandler(async (req, res) => {
     );
 });
 
-const removeFromCart = asyncHandler(async (req, res) => {});
+const removeFromCart = asyncHandler(async (req, res) => {
+  const userId = req.user?.userID;
+  if (!userId) throw new ApiError(403, "No logged in user found!");
+
+  const cartId = req.query.cartId;
+  if (!cartId) throw new ApiError(402, "Cart id is required!");
+
+  const connection = await getConnection();
+
+  const cartItem = await connection.query(
+    `SELECT * FROM carts WHERE cartID=?`,
+    [cartId]
+  );
+  if (!cartItem)
+    throw new ApiError(404, "Cart item is deleted or something else");
+
+  if (cartItem[0][0]?.userID !== userId) {
+    throw new ApiError(403, "You are not authorized to delete this item");
+  }
+
+  const isDeleted = await connection.query(`DELETE FROM carts WHERE cartID=?`, [
+    cartItem[0][0]?.cartID,
+  ]);
+  if (!isDeleted) throw new ApiError(500, "Can't delete the item from cart");
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Successfully removed the item from cart!"));
+});
 
 export {
   addProduct,
