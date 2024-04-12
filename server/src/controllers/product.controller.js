@@ -112,8 +112,28 @@ const addProduct = asyncHandler(async (req, res) => {
 });
 
 const updateProduct = asyncHandler(async (req, res) => {});
+
 const deleteProduct = asyncHandler(async (req, res) => {});
-const getProductByID = asyncHandler(async (req, res) => {});
+
+const getProductByID = asyncHandler(async (req, res) => {
+  const productId = req.query.productId;
+  if (!productId) throw new ApiError(401, "No product ID is selected");
+
+  const connection = await getConnection();
+
+  const product = await connection.query(
+    `SELECT * FROM products WHERE productID=?`,
+    [productId]
+  );
+  if (!product) throw new ApiError(404, "No product found with this ID");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, product[0][0], "Successfully got the user by id!")
+    );
+} );
+
 const addToCart = asyncHandler(async (req, res) => {});
 const removeFromCart = asyncHandler(async (req, res) => {});
 
