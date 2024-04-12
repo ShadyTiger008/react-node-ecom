@@ -61,13 +61,13 @@ const addProduct = asyncHandler(async (req, res) => {
     const imagesArray = req.files.images;
     const imagesLocalPath = imagesArray.map((image) => image.path);
 
-    console.log("Images local path: ", imagesLocalPath);
+    // console.log("Images local path: ", imagesLocalPath);
 
     if (!imagesLocalPath) {
       throw new ApiError(400, "Images are required!");
     }
 
-    console.log("Uploading images to Cloudinary:", imagesLocalPath);
+    // console.log("Uploading images to Cloudinary:", imagesLocalPath);
 
     const uploadedImages = await Promise.all(
       imagesLocalPath.map(uploadOnCloudinary)
@@ -86,8 +86,8 @@ const addProduct = asyncHandler(async (req, res) => {
     queryValues.push(JSON.stringify(uploadedImageArray));
   }
 
-  console.log("Query fields: ", queryFields);
-  console.log("Query values: ", queryValues);
+  // console.log("Query fields: ", queryFields);
+  // console.log("Query values: ", queryValues);
 
   const placeholders = queryValues.map(() => "?").join(", ");
   const query = `INSERT INTO products (${queryFields.join(
