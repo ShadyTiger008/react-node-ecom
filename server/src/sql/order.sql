@@ -1,40 +1,23 @@
--- orderID bigint AI PK 
--- userID bigint 
--- guestID varchar(500) 
--- guestEmail varchar(255) 
--- phoneNumber varchar(255) 
--- alternativePhoneNumber varchar(255) 
--- addressLabel varchar(255) 
--- name varchar(255) 
--- area varchar(255) 
--- city varchar(255) 
--- country varchar(255) 
--- createdAt datetime 
--- paymentMethod varchar(255) 
--- transactionID varchar(255) 
--- paymentPhoneNumber varchar(255) 
--- amount float 
--- currency varchar(45) 
--- paymentGatewayResponse json 
--- subtotal float 
--- shipping float 
--- shippingTitle varchar(500) 
--- bnShippingTitle varchar(500) 
--- coupon float 
--- paidAmount float 
--- couponDetails json 
--- timeTrackingStatus json 
--- additionalComments text 
--- isDelivered tinyint(1) 
--- isCancel tinyint(1) 
--- isApproved tinyint(1) 
--- isShipped tinyint(1) 
--- isProcessing tinyint(1) 
--- isReturned tinyint(1) 
--- isReturnRequest tinyint(1) 
--- returnReason json 
--- deliveryTime datetime 
--- cancelReason text 
--- bnCancelReason text 
--- trackingNumber varchar(255) 
--- courier json
+CREATE TABLE IF NOT EXISTS orders (
+    orderID BIGINT AUTO_INCREMENT PRIMARY KEY,
+    userID INT NOT NULL,
+    subTotal DECIMAL(10, 2) NOT NULL,
+    isDelivered BOOLEAN NOT NULL DEFAULT 0,
+    isShipped BOOLEAN NOT NULL DEFAULT 0,
+    isCancel BOOLEAN NOT NULL DEFAULT 0,
+    isReturn BOOLEAN NOT NULL DEFAULT 0,
+    returnReason VARCHAR(255) DEFAULT NULL,
+    cancelReason VARCHAR(255) DEFAULT NULL,
+    isPaid BOOLEAN NOT NULL DEFAULT 0,
+    status TINYINT NOT NULL DEFAULT 1,
+    deliveryTime TIMESTAMP DEFAULT NULL,
+    customerNumber BIGINT DEFAULT NULL,
+    alternativePhoneNumber BIGINT DEFAULT NULL,
+    customerAddress VARCHAR(255) DEFAULT NULL,
+    trackingNumber VARCHAR(255) DEFAULT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    paymentID INT NOT NULL,
+    FOREIGN KEY (userID) REFERENCES users(userID),
+    FOREIGN KEY (paymentID) REFERENCES payments(paymentID)
+);
