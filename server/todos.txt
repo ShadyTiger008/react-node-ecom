@@ -1,22 +1,5 @@
-ToDo's:
-
-1. Auth Apis: 
- 
-  g. Update user avatar
-
-
-Done:
-    f. Get current logged in user
-
-    a. Verify Email
-    - POST /api/auth/verify-email
-        Request Body: { email: 'example@gmail.com' }
-
-    b. Resend Verification Email
-    - GET /api/auth/resend-verification-email?email=example%40gmail.com
-
-    e. Change current password
-
-    c. Generate access and refresh token
-
-    d. Refresh access token
+1. Wishlist
+2. Order
+3. Payment
+4. SUpport
+5. Review and Rating
