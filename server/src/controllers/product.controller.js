@@ -291,9 +291,90 @@ const getProductByID = asyncHandler(async (req, res) => {
     );
 });
 
+const getAllProduct = asyncHandler( async ( req, res ) =>
+{
+  
+  let page = req.query.page || 1;
+  let sort = req.query.sort || ASC;
+  let limit = req.query.limit || 10;
+  let skip = req.query.skip || 0;
+  let queryFields = [];
+  let queryValues = [];
+
+  if (req.query.isBestSeller) {
+    queryFields.push("isBestSeller");
+    queryValues.push(req.query.isBestSeller);
+  }
+  if (req.query.isNew) {
+    queryFields.push("isNew");
+    queryValues.push(req.query.isNew);
+  }
+  if (req.query.isFeatured) {
+    queryFields.push("isFeatured");
+    queryValues.push(req.query.featured);
+  }
+  if (req.query.gender) {
+    queryFields.push("gender");
+    queryValues.push(req.query.gender);
+  }
+  if (req.query.size) {
+    queryFields.push("gender");
+    queryValues.push(req.query.size);
+  }
+  if (req.query.subcategory) {
+    queryFields.push("subcategory");
+    queryValues.push(req.query.subcategory);
+  }
+  if (req.query.category) {
+    queryFields.push("category");
+    queryValues.push(req.query.category);
+  }
+  if (req.query.title) {
+    queryFields.push("title");
+    queryValues.push(req.query.title);
+  }
+  if (req.query.minCurrentPrice) {
+    queryFields.push("currentPrice >= ?");
+    queryValues.push(req.query.minCurrentPrice);
+  }
+  if (req.query.maxCurrentPrice) {
+    queryFields.push("currentPrice <= ?");
+    queryValues.push(req.query.maxCurrentPrice);
+  }
+  if (req.query.minActualPrice) {
+    queryFields.push("actualPrice >= ?");
+    queryValues.push(req.query.minActualPrice);
+  }
+  if (req.query.maxActualPrice) {
+    queryFields.push("actualPrice <= ?");
+    queryValues.push(req.query.maxActualPrice);
+  }
+
+  const connection = await getConnection();
+  const query =
+    queryFields.length > 0
+      ? `SELECT * FROM products WHERE ${queryFields.join(" AND ")}`
+      : `SELECT * FROM products`;
+
+  const products = await connection.query(query, queryValues);
+
+  const count = products[0].length;
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { products: products[0], total: count },
+        "Successfully fetched all the products!"
+      )
+    );
+});
+
 export {
   addProduct,
   updateProduct,
   deleteProduct,
   getProductByID,
+  getAllProduct,
 };
