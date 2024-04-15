@@ -3,3 +3,5 @@
 3. Payment
 4. SUpport
 5. Review and Rating
+
+6. Product quantity add in table and adjust value while order
