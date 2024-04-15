@@ -100,6 +100,18 @@ const updateCart = asyncHandler(async (req, res) => {
 });
 
 const getCart = asyncHandler(async (req, res) => {
+  let page = req.query.page || 1;
+  let sort = req.query.sort || "ASC";
+  let limit = req.query.limit || 10;
+  let skip = (page - 1) * limit;
+
+  let orderBy = "productID";
+  if (req.query.sortBy) {
+    orderBy = req.query.sortBy;
+  }
+
+  const sortOrder = sort.toUpperCase() === "DESC" ? "DESC" : "ASC";
+
   const userId = req.user?.userID;
   if (!userId) throw new ApiError(403, "No logged in user found!");
 
@@ -109,7 +121,7 @@ const getCart = asyncHandler(async (req, res) => {
     `SELECT carts.cartID, carts.productID, carts.quantity, products.title, products.description, products.actualPrice, products.currentPrice, products.category, products.subcategory, products.gender, products.sizes, products.colors, products.ratings, products.images 
      FROM carts 
      INNER JOIN products ON carts.productID = products.productID
-     WHERE carts.userID=?`,
+     WHERE carts.userID=? ORDER BY ${orderBy} ${sortOrder} LIMIT ${limit} OFFSET ${skip}`,
     [userId]
   );
 
@@ -136,15 +148,13 @@ const getCart = asyncHandler(async (req, res) => {
     },
   }));
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        formattedCartItems,
-        "Cart items retrieved successfully"
-      )
-    );
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { products: formattedCartItems, total: formattedCartItems.length, page: parseInt(page) },
+      "Cart items retrieved successfully"
+    )
+  );
 });
 
 export { addToCart, removeFromCart, updateCart, getCart };

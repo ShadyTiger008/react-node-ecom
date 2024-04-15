@@ -80,7 +80,20 @@ const removeFromWishlist = asyncHandler(async (req, res) => {
     );
 });
 
-const getWishlist = asyncHandler(async (req, res) => {
+const getWishlist = asyncHandler( async ( req, res ) =>
+{
+    let page = req.query.page || 1;
+    let sort = req.query.sort || "ASC";
+    let limit = req.query.limit || 10;
+    let skip = (page - 1) * limit;
+
+    let orderBy = "productID";
+    if (req.query.sortBy) {
+      orderBy = req.query.sortBy;
+    }
+
+  const sortOrder = sort.toUpperCase() === "DESC" ? "DESC" : "ASC";
+  
   const userId = req.user?.userID;
   if (!userId) throw new ApiError(403, "No logged in user found!");
 
@@ -90,7 +103,7 @@ const getWishlist = asyncHandler(async (req, res) => {
     `SELECT wishlists.wishlistID, wishlists.productID, wishlists.userID, products.title, products.description, products.actualPrice, products.currentPrice, products.category, products.subcategory, products.gender, products.sizes, products.colors, products.ratings, products.images 
      FROM wishlists
      INNER JOIN products ON wishlists.productID = products.productID
-     WHERE wishlists.userID=?`,
+     WHERE wishlists.userID=? ORDER BY ${orderBy} ${sortOrder} LIMIT ${limit} OFFSET ${skip}`,
     [userId]
   );
 
@@ -132,6 +145,7 @@ const getWishlist = asyncHandler(async (req, res) => {
       {
         products: formattedWishlistItems,
         total: count,
+        page: page
       },
       "Wishlist items retrieved successfully"
     )
