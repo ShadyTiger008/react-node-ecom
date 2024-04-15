@@ -50,17 +50,26 @@ const addToWishlist = asyncHandler(async (req, res) => {
 
 const removeFromWishlist = asyncHandler(async (req, res) => {
   const userId = req.user?.userID;
-  if (!userId) throw new ApiError(403, "No logged in user found!");
+  if ( !userId ) throw new ApiError( 403, "No logged in user found!" );
+  console.log(userId);
 
   const wishlistId = req.query.wishlistId;
-  if (!wishlistId) throw new ApiError(400, "Cart id is required!");
+  if ( !wishlistId ) throw new ApiError( 400, "wishlist id is required!" );
+  console.log(wishlistId);
 
   const connection = await getConnection();
 
   const wishlistItem = await connection.query(
-    `SELECT * FROM carts WHERE wishlistId=?`,
+    `SELECT * FROM wishlists WHERE wishlistID=?`,
     [wishlistId]
   );
+  // console.log( wishlistItem[ 0 ] );
+  
+  if ( wishlistItem[ 0 ].length === 0 )
+  {
+    throw new ApiError(403, "This product is already removed!");
+  }
+  
 
   if (!wishlistItem[0][0] || wishlistItem[0][0].userID !== userId) {
     throw new ApiError(403, "You are not authorized to delete this item");
