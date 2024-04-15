@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS products (
      colors VARCHAR(255) NOT NULL,
      gender INT NOT NULL DEFAULT 3,
      ratings DECIMAL(3, 2) DEFAULT 0,
+     quantity INT NOT NULL,
      images TEXT,
      isFeatured BOOLEAN NOT NULL DEFAULT 0,
      isNew BOOLEAN NOT NULL DEFAULT 0,
