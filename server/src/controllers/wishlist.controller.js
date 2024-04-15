@@ -16,18 +16,18 @@ const addToWishlist = asyncHandler(async (req, res) => {
     `SELECT * FROM wishlists WHERE userID=? AND productID=?`,
     [userId, productId]
   );
-  console.log(alreadyInWishlist);
-  // if (alreadyInWishlist.length > 0) {
-  //   return res
-  //     .status(200)
-  //     .json(
-  //       new ApiResponse(
-  //         200,
-  //         alreadyInWishlist[0],
-  //         "Product already in wishlist"
-  //       )
-  //     );
-  // }
+  // console.log(alreadyInWishlist[0]);
+  if (alreadyInWishlist[0].length > 0) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          alreadyInWishlist[0],
+          "Product already in wishlist"
+        )
+      );
+  }
 
   const isAddedToWishlist = await connection.query(
     `INSERT INTO wishlists (productID, userID) VALUES (?, ?)`,
@@ -50,12 +50,12 @@ const addToWishlist = asyncHandler(async (req, res) => {
 
 const removeFromWishlist = asyncHandler(async (req, res) => {
   const userId = req.user?.userID;
-  if ( !userId ) throw new ApiError( 403, "No logged in user found!" );
-  console.log(userId);
+  if (!userId) throw new ApiError(403, "No logged in user found!");
+  // console.log(userId);
 
   const wishlistId = req.query.wishlistId;
-  if ( !wishlistId ) throw new ApiError( 400, "wishlist id is required!" );
-  console.log(wishlistId);
+  if (!wishlistId) throw new ApiError(400, "wishlist id is required!");
+  // console.log(wishlistId);
 
   const connection = await getConnection();
 
@@ -64,12 +64,10 @@ const removeFromWishlist = asyncHandler(async (req, res) => {
     [wishlistId]
   );
   // console.log( wishlistItem[ 0 ] );
-  
-  if ( wishlistItem[ 0 ].length === 0 )
-  {
+
+  if (wishlistItem[0].length === 0) {
     throw new ApiError(403, "This product is already removed!");
   }
-  
 
   if (!wishlistItem[0][0] || wishlistItem[0][0].userID !== userId) {
     throw new ApiError(403, "You are not authorized to delete this item");
@@ -89,20 +87,19 @@ const removeFromWishlist = asyncHandler(async (req, res) => {
     );
 });
 
-const getWishlist = asyncHandler( async ( req, res ) =>
-{
-    let page = req.query.page || 1;
-    let sort = req.query.sort || "ASC";
-    let limit = req.query.limit || 10;
-    let skip = (page - 1) * limit;
+const getWishlist = asyncHandler(async (req, res) => {
+  let page = req.query.page || 1;
+  let sort = req.query.sort || "ASC";
+  let limit = req.query.limit || 10;
+  let skip = (page - 1) * limit;
 
-    let orderBy = "productID";
-    if (req.query.sortBy) {
-      orderBy = req.query.sortBy;
-    }
+  let orderBy = "productID";
+  if (req.query.sortBy) {
+    orderBy = req.query.sortBy;
+  }
 
   const sortOrder = sort.toUpperCase() === "DESC" ? "DESC" : "ASC";
-  
+
   const userId = req.user?.userID;
   if (!userId) throw new ApiError(403, "No logged in user found!");
 
@@ -154,7 +151,7 @@ const getWishlist = asyncHandler( async ( req, res ) =>
       {
         products: formattedWishlistItems,
         total: count,
-        page: page
+        page: page,
       },
       "Wishlist items retrieved successfully"
     )
