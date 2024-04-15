@@ -291,13 +291,19 @@ const getProductByID = asyncHandler(async (req, res) => {
     );
 });
 
-const getAllProduct = asyncHandler( async ( req, res ) =>
-{
-  
+const getAllProduct = asyncHandler(async (req, res) => {
   let page = req.query.page || 1;
-  let sort = req.query.sort || ASC;
+  let sort = req.query.sort || "ASC";
   let limit = req.query.limit || 10;
-  let skip = req.query.skip || 0;
+  let skip = (page - 1) * limit;
+
+  let orderBy = "productID";
+  if (req.query.sortBy) {
+    orderBy = req.query.sortBy;
+  }
+
+  const sortOrder = sort.toUpperCase() === "DESC" ? "DESC" : "ASC";
+
   let queryFields = [];
   let queryValues = [];
 
@@ -353,8 +359,10 @@ const getAllProduct = asyncHandler( async ( req, res ) =>
   const connection = await getConnection();
   const query =
     queryFields.length > 0
-      ? `SELECT * FROM products WHERE ${queryFields.join(" AND ")}`
-      : `SELECT * FROM products`;
+      ? `SELECT * FROM products WHERE ${queryFields.join(
+          " AND "
+        )} ORDER BY ${orderBy} ${sortOrder} LIMIT ${limit} OFFSET ${skip}`
+      : `SELECT * FROM products ORDER BY ${orderBy} ${sortOrder} LIMIT ${limit} OFFSET ${skip}`;
 
   const products = await connection.query(query, queryValues);
 
@@ -365,7 +373,7 @@ const getAllProduct = asyncHandler( async ( req, res ) =>
     .json(
       new ApiResponse(
         200,
-        { products: products[0], total: count },
+        { products: products[0], total: count, page: parseInt(page) },
         "Successfully fetched all the products!"
       )
     );
