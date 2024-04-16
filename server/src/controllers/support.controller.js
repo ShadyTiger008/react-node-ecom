@@ -126,7 +126,7 @@ const getSupport = asyncHandler(async (req, res) => {
   let limit = req.query.limit || 10;
   let skip = (page - 1) * limit;
 
-  let orderBy = "productID";
+  let orderBy = "supportID";
   if (req.query.sortBy) {
     orderBy = req.query.sortBy;
   }
@@ -138,43 +138,57 @@ const getSupport = asyncHandler(async (req, res) => {
 
   const connection = await getConnection();
 
-  const WishlistItems = await connection.query(
-    `SELECT wishlists.wishlistID, wishlists.productID, wishlists.userID, products.title, products.description, products.actualPrice, products.currentPrice, products.category, products.subcategory, products.gender, products.sizes, products.colors, products.ratings, products.attachments 
-     FROM wishlists
-     INNER JOIN products ON wishlists.productID = products.productID
-     WHERE wishlists.userID=? ORDER BY ${orderBy} ${sortOrder} LIMIT ${limit} OFFSET ${skip}`,
+  const SupportItems = await connection.query(
+    `SELECT supports.supportID, supports.subject, supports.description, supports.userID, supports.supportType, supports.userEmail, supports.userPhone, supports.status, supports.priority, supports.attachments, supports.createdAt, supports.updatedAt, users.fullName, users.gender, users.email, users.phone, users.address, users.city, users.state, users.zip, users.type, users.status, users.createdAt, users.profileImage 
+     FROM supports
+     INNER JOIN users ON supports.userID = users.userID
+     ORDER BY ${orderBy} ${sortOrder} LIMIT ${limit} OFFSET ${skip}`,
     [userId]
   );
 
-  if (!WishlistItems[0].length) {
-    return res.status(200).json(new ApiResponse(200, [], "Wishlist is empty"));
+  console.log(SupportItems);
+
+  if (!SupportItems[0].length) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, [], "No support ticket created"));
   }
 
-  const wishlistItems = await connection.query(
-    `SELECT COUNT(*) AS itemCount FROM wishlists WHERE userID = ?`,
+  const supportItems = await connection.query(
+    `SELECT COUNT(*) AS itemCount FROM supports`,
     [userId]
   );
 
-  console.log("Items: ", wishlistItems?.[0]?.[0]?.itemCount);
+  // console.log("Items: ", supportItems?.[0]?.[0]?.itemCount);
 
-  const count = wishlistItems?.[0]?.[0]?.itemCount;
+  const count = supportItems?.[0]?.[0]?.itemCount;
 
-  const formattedWishlistItems = WishlistItems[0].map((item) => ({
-    wishlistID: item.wishlistID,
-    productID: item.productID,
-    quantity: item.quantity,
-    product: {
-      title: item.title,
-      description: item.description,
-      current_price: item.currentPrice,
-      actual_price: item.actualPrice,
-      category: item.category,
-      sub_category: item.subcategory,
+  const formattedSupportItems = SupportItems[0].map((item) => ({
+    supportId: item.supportID,
+    subject: item.support,
+    description: item.description,
+    support_type: item.supportType,
+    userId: item.userID,
+    user_email: item.email,
+    user_phone: item.phone,
+    status: item.status,
+    priority: item.priority,
+    attachments: item.attachments,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    user_details: {
+      name: item.fullName,
       gender: item.gender,
-      sizes: item.sizes,
-      colors: item.colors,
-      ratings: item.ratings,
-      attachments: item.attachments,
+      email: item.email,
+      phone: item.phone,
+      address: item.address,
+      city: item.city,
+      state: item.state,
+      zip: item.zip,
+      type: item.type,
+      status: item.status,
+      createdAt: item.createdAt,
+      profileImage: item.profileImage,
     },
   }));
 
@@ -182,11 +196,11 @@ const getSupport = asyncHandler(async (req, res) => {
     new ApiResponse(
       200,
       {
-        products: formattedWishlistItems,
+        products: formattedSupportItems,
         total: count,
         page: page,
       },
-      "Wishlist items retrieved successfully"
+      "All supports retrieved successfully"
     )
   );
 });
