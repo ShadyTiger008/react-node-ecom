@@ -1,4 +1,5 @@
 import { getConnection } from "../db/index.js";
+import { uploadOnCloudinary } from "../services/cloudinary.js";
 import ApiError from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -7,45 +8,77 @@ const addSupport = asyncHandler(async (req, res) => {
   const userId = req.user?.userID;
   if (!userId) throw new ApiError(403, "No logged in user found!");
 
-  const productId = req.query.productId;
-  if (!productId) throw new ApiError(400, "Product ID is required!");
+  const { subject, description, supportType, userEmail, userPhone } = req.body;
 
   const connection = await getConnection();
 
-  const alreadyInWishlist = await connection.query(
-    `SELECT * FROM wishlists WHERE userID=? AND productID=?`,
-    [userId, productId]
-  );
-  console.log(alreadyInWishlist);
-  // if (alreadyInWishlist.length > 0) {
-  //   return res
-  //     .status(200)
-  //     .json(
-  //       new ApiResponse(
-  //         200,
-  //         alreadyInWishlist[0],
-  //         "Product already in wishlist"
-  //       )
-  //     );
-  // }
+  const user_mail = userEmail ? userEmail : req.user.email;
+  const user_phone = userPhone ? userPhone : req.user.phone;
 
-  const isAddedToWishlist = await connection.query(
-    `INSERT INTO wishlists (productID, userID) VALUES (?, ?)`,
-    [productId, userId]
-  );
+  let queryFields = [
+    "userID",
+    "subject",
+    "description",
+    "supportType",
+    "userEmail",
+    "userPhone",
+  ];
+  let queryValues = [
+    userId,
+    subject,
+    description,
+    supportType,
+    user_mail,
+    user_phone,
+  ];
 
-  if (!isAddedToWishlist)
-    throw new ApiError(500, "Can't add the item to the wishlist");
+  let uploadedImageArray = [];
+
+  if (req.files && req.files.attachments) {
+    const attachmentsArray = req.files.attachments;
+    const attachmentsLocalPath = attachmentsArray.map((image) => image.path);
+
+    // console.log("attachments local path: ", attachmentsLocalPath);
+
+    if (!attachmentsLocalPath) {
+      throw new ApiError(400, "attachments are required!");
+    }
+
+    // console.log("Uploading attachments to Cloudinary:", attachmentsLocalPath);
+
+    const uploadedAttachments = await Promise.all(
+      attachmentsLocalPath.map(uploadOnCloudinary)
+    );
+
+    uploadedAttachments.forEach((image) => {
+      uploadedImageArray.push(image.url);
+    });
+
+    if (!uploadedImageArray.length) {
+      console.error(
+        "attachments upload to Cloudinary failed:",
+        attachmentsLocalPath
+      );
+      throw new ApiError(400, "Image files are required!");
+    }
+
+    queryFields.push("attachments");
+    queryValues.push(JSON.stringify(uploadedImageArray));
+  }
+
+  const placeholders = queryValues.map(() => "?").join(", ");
+  const query = `INSERT INTO supports (${queryFields.join(
+    ", "
+  )}) VALUES (${placeholders})`;
+
+  const newSupport = await connection.query(query, queryValues);
+
+  if (newSupport[0].length === 0)
+    throw new ApiError(500, "An error occurred while creating support");
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        isAddedToWishlist,
-        "Product successfully added to wishlist"
-      )
-    );
+    .json(new ApiResponse(200, newSupport[0], "Support successfully created"));
 });
 
 const deleteSupport = asyncHandler(async (req, res) => {
@@ -106,7 +139,7 @@ const getSupport = asyncHandler(async (req, res) => {
   const connection = await getConnection();
 
   const WishlistItems = await connection.query(
-    `SELECT wishlists.wishlistID, wishlists.productID, wishlists.userID, products.title, products.description, products.actualPrice, products.currentPrice, products.category, products.subcategory, products.gender, products.sizes, products.colors, products.ratings, products.images 
+    `SELECT wishlists.wishlistID, wishlists.productID, wishlists.userID, products.title, products.description, products.actualPrice, products.currentPrice, products.category, products.subcategory, products.gender, products.sizes, products.colors, products.ratings, products.attachments 
      FROM wishlists
      INNER JOIN products ON wishlists.productID = products.productID
      WHERE wishlists.userID=? ORDER BY ${orderBy} ${sortOrder} LIMIT ${limit} OFFSET ${skip}`,
@@ -141,7 +174,7 @@ const getSupport = asyncHandler(async (req, res) => {
       sizes: item.sizes,
       colors: item.colors,
       ratings: item.ratings,
-      images: item.images,
+      attachments: item.attachments,
     },
   }));
 
