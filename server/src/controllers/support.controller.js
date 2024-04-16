@@ -86,37 +86,37 @@ const deleteSupport = asyncHandler(async (req, res) => {
   if (!userId) throw new ApiError(403, "No logged in user found!");
   console.log(userId);
 
-  const wishlistId = req.query.wishlistId;
-  if (!wishlistId) throw new ApiError(400, "wishlist id is required!");
-  console.log(wishlistId);
+  const supportID = req.query.supportID;
+  if (!supportID) throw new ApiError(400, "wishlist id is required!");
+  console.log(supportID);
 
   const connection = await getConnection();
 
-  const wishlistItem = await connection.query(
-    `SELECT * FROM wishlists WHERE wishlistID=?`,
-    [wishlistId]
+  const supportItem = await connection.query(
+    `SELECT * FROM supports WHERE supportID=?`,
+    [supportID]
   );
   // console.log( wishlistItem[ 0 ] );
 
-  if (wishlistItem[0].length === 0) {
+  if (supportItem[0].length === 0) {
     throw new ApiError(403, "This product is already removed!");
   }
 
-  if (!wishlistItem[0][0] || wishlistItem[0][0].userID !== userId) {
+  if (!supportItem[0][0] || supportItem[0][0].userID !== userId) {
     throw new ApiError(403, "You are not authorized to delete this item");
   }
 
   const isDeleted = await connection.query(
-    `DELETE FROM wishlists WHERE wishlistID=?`,
-    [wishlistId]
+    `DELETE FROM supports WHERE supportID=?`,
+    [supportID]
   );
   if (!isDeleted)
-    throw new ApiError(500, "Can't remove the item from the wishlist");
+    throw new ApiError(500, "Can't remove this support ticket");
 
   res
     .status(200)
     .json(
-      new ApiResponse(200, {}, "Successfully removed the item from wishlist")
+      new ApiResponse(200, {}, "Successfully removed the support")
     );
 });
 
