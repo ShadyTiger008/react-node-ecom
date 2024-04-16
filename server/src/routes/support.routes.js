@@ -22,7 +22,6 @@ router.route("/add-support").post(
 );
 router.route("/update-support").post(
   verifyJWT,
-  checkAdmin,
   upload.fields([
     {
       name: "attachments",

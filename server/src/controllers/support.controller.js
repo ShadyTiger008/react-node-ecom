@@ -87,8 +87,9 @@ const updateSupport = asyncHandler(async (req, res) => {
 
   const { subject, description, status, priority } = req.body;
 
-  if (!subject && !description && !status && !priority)
-    throw new ApiError(400, "Body can't be totally empty");
+  if (!subject && !description && !status && !priority && !req.files) {
+    throw new ApiError(400, "At least one field must be provided for update");
+  }
 
   const connection = await getConnection();
 
@@ -96,67 +97,63 @@ const updateSupport = asyncHandler(async (req, res) => {
     `SELECT * FROM users WHERE userID=?`,
     userId
   );
-  if (loggedUser[0].length === 0)
+  if (loggedUser[0].length === 0) {
     throw new ApiError(500, "No user found with this id");
+  }
 
   const support = await connection.query(
     `SELECT * FROM supports WHERE supportID=?`,
     req.query.supportID
   );
-
-  let queryFields = [];
-  let queryValues = [];
+  if (support[0].length === 0) {
+    throw new ApiError(500, "No support found with this ID");
+  }
 
   if (
-    subject &&
-    loggedUser[0][0].type === 1 &&
-    support[0][0].userID === req.user.userID
+    (subject || description) &&
+    loggedUser[0][0].type !== 1 &&
+    support[0][0].userID !== req.user.userID
   ) {
-    queryFields.push("subject");
+    return res
+      .status(403)
+      .json(
+        new ApiResponse(403, {}, "Only authenticated users can update this!")
+      );
+  }
+
+  if (status && loggedUser[0][0].type !== 2) {
+    return res
+      .status(403)
+      .json(new ApiResponse(403, {}, "Only admin can change the status"));
+  }
+
+  if (priority && loggedUser[0][0].type !== 2) {
+    return res
+      .status(403)
+      .json(new ApiResponse(403, {}, "Only admin can change the priority"));
+  }
+
+  const queryFields = [];
+  const queryValues = [];
+
+  if (subject) {
+    queryFields.push("subject=?");
     queryValues.push(subject);
-  } else if (
-    subject &&
-    !(loggedUser[0][0].type === 1 && support[0][0].userID !== req.user.userID)
-  ) {
-    return res
-      .status(403)
-      .json(
-        new ApiResponse(403, {}, "Only authenticate user can update this!")
-      );
   }
-  if (
-    description &&
-    loggedUser[0][0].type === 1 &&
-    support[0][0].userID !== req.user.userID
-  ) {
-    queryFields.push("description");
+
+  if (description) {
+    queryFields.push("description=?");
     queryValues.push(description);
-  } else if (
-    description &&
-    !(loggedUser[0][0].type === 1) &&
-    support[0][0].userID !== req.user.userID
-  ) {
-    return res
-      .status(403)
-      .json(
-        new ApiResponse(403, {}, "Only authenticate user can update this!")
-      );
   }
-  if (status && loggedUser[0][0].type === 2) {
-    queryFields.push("status");
+
+  if (status) {
+    queryFields.push("status=?");
     queryValues.push(status);
-  } else if (status && !(loggedUser[0][0].type === 2)) {
-    return res
-      .status(403)
-      .json(new ApiResponse(403, {}, "Only admin can change this!"));
   }
-  if (priority && loggedUser[0][0].type === 2) {
-    queryFields.push("priority");
+
+  if (priority) {
+    queryFields.push("priority=?");
     queryValues.push(priority);
-  } else if (status && !(loggedUser[0][0].type === 2)) {
-    return res
-      .status(403)
-      .json(new ApiResponse(403, {}, "Only admin can change this!"));
   }
 
   let uploadedImageArray = [];
@@ -193,19 +190,29 @@ const updateSupport = asyncHandler(async (req, res) => {
     queryValues.push(JSON.stringify(uploadedImageArray));
   }
 
-  const query = `UPDATE supports SET ${queryFields
-    .map((field) => `${field}=?`)
-    .join(", ")} WHERE supportID=?`;
-  console.log( "Query: ", query );
-  // console.log("Values: ", [...queryValues, req.query.supportID]);
+  const query = req.files
+    ? `UPDATE supports SET ${queryFields
+        .map((field) => `${field}=?`)
+        .join(", ")} WHERE supportID=?`
+    : `UPDATE supports SET ${queryFields.join(", ")} WHERE supportID=?`;
 
-  const newSupport = await connection.query(query, [...queryValues, req.query.supportID]);
-  if (newSupport[0].length === 0)
-    throw new ApiError(500, "An error occurred while updating support");
+  console.log("Query: ", query);
+  console.log("Values: ", [...queryValues, req.query.supportID]);
+
+  const updatedSupport = await connection.query(query, [
+    ...queryValues,
+    req.query.supportID,
+  ]);
+
+  if (updatedSupport[0].affectedRows === 0) {
+    throw new ApiError(500, "Failed to update support");
+  }
 
   return res
     .status(200)
-    .json(new ApiResponse(200, newSupport[0], "Support successfully updated"));
+    .json(
+      new ApiResponse(200, updatedSupport[0], "Support successfully updated")
+    );
 });
 
 const deleteSupport = asyncHandler(async (req, res) => {
