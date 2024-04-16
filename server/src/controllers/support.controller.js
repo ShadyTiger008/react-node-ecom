@@ -81,6 +81,133 @@ const addSupport = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, newSupport[0], "Support successfully created"));
 });
 
+const updateSupport = asyncHandler(async (req, res) => {
+  const userId = req.user.userID;
+  if (!userId) throw new ApiError(404, "No logged in user found!");
+
+  const { subject, description, status, priority } = req.body;
+
+  if (!subject && !description && !status && !priority)
+    throw new ApiError(400, "Body can't be totally empty");
+
+  const connection = await getConnection();
+
+  const loggedUser = await connection.query(
+    `SELECT * FROM users WHERE userID=?`,
+    userId
+  );
+  if (loggedUser[0].length === 0)
+    throw new ApiError(500, "No user found with this id");
+
+  const support = await connection.query(
+    `SELECT * FROM supports WHERE supportID=?`,
+    req.query.supportID
+  );
+
+  let queryFields = [];
+  let queryValues = [];
+
+  if (
+    subject &&
+    loggedUser[0][0].type === 1 &&
+    support[0][0].userID === req.user.userID
+  ) {
+    queryFields.push("subject");
+    queryValues.push(subject);
+  } else if (
+    subject &&
+    !(loggedUser[0][0].type === 1 && support[0][0].userID !== req.user.userID)
+  ) {
+    return res
+      .status(403)
+      .json(
+        new ApiResponse(403, {}, "Only authenticate user can update this!")
+      );
+  }
+  if (
+    description &&
+    loggedUser[0][0].type === 1 &&
+    support[0][0].userID !== req.user.userID
+  ) {
+    queryFields.push("description");
+    queryValues.push(description);
+  } else if (
+    description &&
+    !(loggedUser[0][0].type === 1) &&
+    support[0][0].userID !== req.user.userID
+  ) {
+    return res
+      .status(403)
+      .json(
+        new ApiResponse(403, {}, "Only authenticate user can update this!")
+      );
+  }
+  if (status && loggedUser[0][0].type === 2) {
+    queryFields.push("status");
+    queryValues.push(status);
+  } else if (status && !(loggedUser[0][0].type === 2)) {
+    return res
+      .status(403)
+      .json(new ApiResponse(403, {}, "Only admin can change this!"));
+  }
+  if (priority && loggedUser[0][0].type === 2) {
+    queryFields.push("priority");
+    queryValues.push(priority);
+  } else if (status && !(loggedUser[0][0].type === 2)) {
+    return res
+      .status(403)
+      .json(new ApiResponse(403, {}, "Only admin can change this!"));
+  }
+
+  let uploadedImageArray = [];
+
+  if (req.files && req.files.attachments) {
+    const attachmentsArray = req.files.attachments;
+    const attachmentsLocalPath = attachmentsArray.map((image) => image.path);
+
+    // console.log("attachments local path: ", attachmentsLocalPath);
+
+    if (!attachmentsLocalPath) {
+      throw new ApiError(400, "attachments are required!");
+    }
+
+    // console.log("Uploading attachments to Cloudinary:", attachmentsLocalPath);
+
+    const uploadedAttachments = await Promise.all(
+      attachmentsLocalPath.map(uploadOnCloudinary)
+    );
+
+    uploadedAttachments.forEach((image) => {
+      uploadedImageArray.push(image.url);
+    });
+
+    if (!uploadedImageArray.length) {
+      console.error(
+        "attachments upload to Cloudinary failed:",
+        attachmentsLocalPath
+      );
+      throw new ApiError(400, "Image files are required!");
+    }
+
+    queryFields.push("attachments");
+    queryValues.push(JSON.stringify(uploadedImageArray));
+  }
+
+  const query = `UPDATE supports SET ${queryFields
+    .map((field) => `${field}=?`)
+    .join(", ")} WHERE supportID=?`;
+  console.log( "Query: ", query );
+  // console.log("Values: ", [...queryValues, req.query.supportID]);
+
+  const newSupport = await connection.query(query, [...queryValues, req.query.supportID]);
+  if (newSupport[0].length === 0)
+    throw new ApiError(500, "An error occurred while updating support");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, newSupport[0], "Support successfully updated"));
+});
+
 const deleteSupport = asyncHandler(async (req, res) => {
   const userId = req.user?.userID;
   if (!userId) throw new ApiError(403, "No logged in user found!");
@@ -110,14 +237,11 @@ const deleteSupport = asyncHandler(async (req, res) => {
     `DELETE FROM supports WHERE supportID=?`,
     [supportID]
   );
-  if (!isDeleted)
-    throw new ApiError(500, "Can't remove this support ticket");
+  if (!isDeleted) throw new ApiError(500, "Can't remove this support ticket");
 
   res
     .status(200)
-    .json(
-      new ApiResponse(200, {}, "Successfully removed the support")
-    );
+    .json(new ApiResponse(200, {}, "Successfully removed the support"));
 });
 
 const getSupport = asyncHandler(async (req, res) => {
@@ -246,4 +370,4 @@ const getSupport = asyncHandler(async (req, res) => {
   );
 });
 
-export { addSupport, getSupport, deleteSupport };
+export { addSupport, updateSupport, getSupport, deleteSupport };
