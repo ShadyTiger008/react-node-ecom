@@ -126,58 +126,99 @@ const getSupport = asyncHandler(async (req, res) => {
   let limit = req.query.limit || 10;
   let skip = (page - 1) * limit;
 
-  let orderBy = "supportID";
-  if (req.query.sortBy) {
-    orderBy = req.query.sortBy;
-  }
-
-  const sortOrder = sort.toUpperCase() === "DESC" ? "DESC" : "ASC";
-
   const userId = req.user?.userID;
   if (!userId) throw new ApiError(403, "No logged in user found!");
 
   const connection = await getConnection();
 
-  const SupportItems = await connection.query(
-    `SELECT supports.supportID, supports.subject, supports.description, supports.userID, supports.supportType, supports.userEmail, supports.userPhone, supports.status, supports.priority, supports.attachments, supports.createdAt, supports.updatedAt, users.fullName, users.gender, users.email, users.phone, users.address, users.city, users.state, users.zip, users.type, users.status, users.createdAt, users.profileImage 
-     FROM supports
-     INNER JOIN users ON supports.userID = users.userID
-     ORDER BY ${orderBy} ${sortOrder} LIMIT ${limit} OFFSET ${skip}`,
-    [userId]
-  );
+  let query = `
+    SELECT 
+      supports.supportID, supports.subject, supports.description, supports.userID, 
+      supports.supportType, supports.userEmail, supports.userPhone, supports.status AS support_status, 
+      supports.priority, supports.attachments, supports.createdAt, supports.updatedAt, 
+      users.fullName, users.gender, users.email, users.phone, users.address, users.city, 
+      users.state, users.zip, users.type, users.status, users.createdAt, users.profileImage 
+    FROM supports
+    INNER JOIN users ON supports.userID = users.userID`;
 
-  console.log(SupportItems);
+  const queryValues = [];
+  const whereClauses = [];
 
-  if (!SupportItems[0].length) {
-    return res
-      .status(200)
-      .json(new ApiResponse(200, [], "No support ticket created"));
+  if (req.query.supportID) {
+    whereClauses.push("supports.supportID = ?");
+    queryValues.push(req.query.supportID);
+  }
+  if (req.query.userID) {
+    whereClauses.push("supports.userID = ?");
+    queryValues.push(req.query.userID);
+  }
+  if (req.query.supportType) {
+    whereClauses.push("supports.supportType = ?");
+    queryValues.push(req.query.supportType);
+  }
+  if (req.query.email) {
+    whereClauses.push("supports.userEmail = ?");
+    queryValues.push(req.query.email);
+  }
+  if (req.query.phone) {
+    whereClauses.push("supports.userPhone = ?");
+    queryValues.push(req.query.phone);
+  }
+  if (req.query.status) {
+    whereClauses.push("supports.status = ?");
+    queryValues.push(req.query.status);
+  }
+  if (req.query.priority) {
+    whereClauses.push("supports.priority = ?");
+    queryValues.push(req.query.priority);
+  }
+  if (req.query.created_from && req.query.created_to) {
+    whereClauses.push("supports.createdAt BETWEEN ? AND ?");
+    queryValues.push(req.query.created_from, req.query.created_to);
+  }
+  if (req.query.updated_from && req.query.updated_to) {
+    whereClauses.push("supports.updatedAt BETWEEN ? AND ?");
+    queryValues.push(req.query.updated_from, req.query.updated_to);
   }
 
-  const supportItems = await connection.query(
-    `SELECT COUNT(*) AS itemCount FROM supports`,
-    [userId]
+  if (whereClauses.length > 0) {
+    query += ` WHERE ${whereClauses.join(" AND ")}`;
+  }
+
+  const orderBy = req.query.sortBy || "supportID";
+  const sortOrder = sort.toUpperCase() === "DESC" ? "DESC" : "ASC";
+  query += ` ORDER BY ${orderBy} ${sortOrder} LIMIT ${limit} OFFSET ${skip}`;
+
+  const supportItems = await connection.query(query, queryValues);
+
+  console.log(supportItems);
+
+  if (!supportItems[0].length) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, [], "No support ticket found"));
+  }
+
+  const totalCount = await connection.query(
+    `SELECT COUNT(*) AS total FROM supports`
   );
+  const count = totalCount[0][0].total;
 
-  // console.log("Items: ", supportItems?.[0]?.[0]?.itemCount);
-
-  const count = supportItems?.[0]?.[0]?.itemCount;
-
-  const formattedSupportItems = SupportItems[0].map((item) => ({
+  const formattedSupportItems = supportItems[0].map((item) => ({
     supportId: item.supportID,
-    subject: item.support,
+    subject: item.subject,
     description: item.description,
-    support_type: item.supportType,
+    supportType: item.supportType,
     userId: item.userID,
-    user_email: item.email,
-    user_phone: item.phone,
-    status: item.status,
+    userEmail: item.userEmail,
+    userPhone: item.userPhone,
+    supportStatus: item.support_status,
     priority: item.priority,
     attachments: item.attachments,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
-    user_details: {
-      name: item.fullName,
+    userDetails: {
+      fullName: item.fullName,
       gender: item.gender,
       email: item.email,
       phone: item.phone,
