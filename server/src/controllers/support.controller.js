@@ -197,7 +197,7 @@ const updateSupport = asyncHandler(async (req, res) => {
     : `UPDATE supports SET ${queryFields.join(", ")} WHERE supportID=?`;
 
   console.log("Query: ", query);
-  console.log("Values: ", [...queryValues, req.query.supportID]);
+  console.log("Values: ", ...queryValues, req.query.supportID);
 
   const updatedSupport = await connection.query(query, [
     ...queryValues,
